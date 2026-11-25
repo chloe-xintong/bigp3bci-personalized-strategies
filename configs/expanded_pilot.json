@@ -1,0 +1,154 @@
+{
+  "version": "expanded_candidate_pilot_v1",
+  "selection": {
+    "subjects": {
+      "F_03": "ETSU",
+      "F_05": "Duke",
+      "F_06": "Duke",
+      "F_20": "ETSU"
+    },
+    "sessions_per_subject": 2,
+    "split": "Train",
+    "condition": "CBCol",
+    "rule": "subjects fixed before detection; earliest 2 available sessions and lexicographically first Train/CBCol EDF per session; no test files"
+  },
+  "filter": {
+    "family": "butter",
+    "order": 4,
+    "notch_hz": 60.0,
+    "notch_q": 30.0,
+    "band_hz": [
+      0.5,
+      30.0
+    ],
+    "initialization": "steady_first_sample",
+    "chunk_seconds": 1.0,
+    "startup_seconds": 10.0
+  },
+  "epoch": {
+    "duration_seconds": 0.8,
+    "baseline": null
+  },
+  "continuous_qc": {
+    "window_seconds": 2.0,
+    "step_seconds": 1.0,
+    "flat_ptp_uv": 0.5,
+    "low_std_uv": 0.1,
+    "large_abs_uv": 500.0,
+    "large_ptp_uv": 500.0,
+    "persistent_fraction": 0.2,
+    "persistent_min_seconds": 10.0
+  },
+  "signal_quality": {
+    "constant_min_seconds": 0.25,
+    "zero_min_seconds": 0.25,
+    "flat_window_seconds": 0.5,
+    "flat_step_seconds": 0.25,
+    "flat_ptp_uv": 0.5,
+    "flat_std_uv": 0.1,
+    "jump_delta_uv": 100.0
+  },
+  "blink_detector": {
+    "status": "unvalidated engineering candidates; fixed parameters; no data-distribution fitting",
+    "frontal_channels": [
+      "EEG_F3",
+      "EEG_Fz",
+      "EEG_F4"
+    ],
+    "posterior_channels": [
+      "EEG_Pz",
+      "EEG_PO7",
+      "EEG_PO8",
+      "EEG_Oz"
+    ],
+    "auxiliary_lowpass_hz": 5.0,
+    "auxiliary_order": 2,
+    "entry_uv": 20.0,
+    "exit_uv": 10.0,
+    "min_frontal_amplitude_uv": 25.0,
+    "min_support_channels": 2,
+    "support_peak_fraction": 0.5,
+    "min_correlation": 0.6,
+    "min_duration_seconds": 0.08,
+    "max_duration_seconds": 1.2,
+    "recovery_seconds": 0.08,
+    "min_peak_distance_seconds": 0.35,
+    "merge_gap_seconds": 0.15,
+    "posterior_floor_uv": 1.0,
+    "frontal_posterior_support_ratio": 1.2,
+    "require_frontal_dominance": false,
+    "min_slow_ptp_fraction": 0.35
+  },
+  "simulation": {
+    "qc_channel_sets": {
+      "all16": [
+        "EEG_F3",
+        "EEG_Fz",
+        "EEG_F4",
+        "EEG_T7",
+        "EEG_C3",
+        "EEG_Cz",
+        "EEG_C4",
+        "EEG_T8",
+        "EEG_CP3",
+        "EEG_CP4",
+        "EEG_P3",
+        "EEG_Pz",
+        "EEG_P4",
+        "EEG_PO7",
+        "EEG_PO8",
+        "EEG_Oz"
+      ],
+      "example8": [
+        "EEG_Fz",
+        "EEG_Cz",
+        "EEG_P3",
+        "EEG_Pz",
+        "EEG_P4",
+        "EEG_PO7",
+        "EEG_PO8",
+        "EEG_Oz"
+      ]
+    },
+    "lower_ptp_uv": 0.5,
+    "upper_ptp_uv": [
+      150.0,
+      250.0,
+      350.0,
+      null
+    ],
+    "base_conditions": [
+      "incomplete",
+      "filter_startup",
+      "nonfinite",
+      "filter_recovery",
+      "raw_flat"
+    ],
+    "jump_policy": "report_only",
+    "persistent_channel_policy": "report_only; no file/channel exclusion",
+    "blink_policy": "candidate_only; never determines simulated rejection"
+  },
+  "manual_validation": {
+    "manual_root": "outputs/artifact_qc/continuous_manual_qc/manual",
+    "reviewed_intervals_path": "outputs/artifact_qc/continuous_manual_qc/manual/reviewed_intervals.csv",
+    "sparse_blink_files": [
+      "F_05_SE001_CBCol_Train02.edf"
+    ],
+    "legacy_blink_types": [
+      "MANUAL_bad_span"
+    ],
+    "reviewed_schema": [
+      "edf_name",
+      "start_sec",
+      "end_sec",
+      "review_status"
+    ],
+    "complete_status": "complete",
+    "note": "reviewed intervals must be explicitly saved by human; no auto ground truth"
+  },
+  "plotting": {
+    "examples_per_file": 2,
+    "example_seconds": 4.0
+  },
+  "scope": "candidate statistics only; no training, ICA, interpolation, rereferencing or final rule selection"
+}

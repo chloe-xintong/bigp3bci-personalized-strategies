@@ -1,0 +1,116 @@
+{
+  "experiment": "swlda_three_sessions_v2",
+  "data_scope": "All 54 Train/CBCol EDFs, 6 fixed subjects x 3 Sessions x 3 EDFs; no final Test",
+  "input_manifest": "outputs/full_three_session_preprocessing/input_manifest.csv",
+  "policy_decisions": "outputs/full_three_session_preprocessing/all_epoch_policy_decisions.csv",
+  "strategies": {
+    "A": "faults_only",
+    "B": "ptp_150uv_sensitivity",
+    "C": "blink_overlap"
+  },
+  "blink_interval_version": "old_candidate_overlap_v1",
+  "blink_interval_source": "per-EDF blink_candidates.csv and blink_epoch_links.csv in preprocessing input manifest",
+  "blink_detector": {
+    "status": "unvalidated engineering candidates; fixed parameters; no data-distribution fitting",
+    "frontal_channels": [
+      "EEG_F3",
+      "EEG_Fz",
+      "EEG_F4"
+    ],
+    "posterior_channels": [
+      "EEG_Pz",
+      "EEG_PO7",
+      "EEG_PO8",
+      "EEG_Oz"
+    ],
+    "auxiliary_lowpass_hz": 5.0,
+    "auxiliary_order": 2,
+    "entry_uv": 20.0,
+    "exit_uv": 10.0,
+    "min_frontal_amplitude_uv": 25.0,
+    "min_support_channels": 2,
+    "support_peak_fraction": 0.5,
+    "min_correlation": 0.6,
+    "min_duration_seconds": 0.08,
+    "max_duration_seconds": 1.2,
+    "recovery_seconds": 0.08,
+    "min_peak_distance_seconds": 0.35,
+    "merge_gap_seconds": 0.15,
+    "posterior_floor_uv": 1.0,
+    "frontal_posterior_support_ratio": 1.2,
+    "require_frontal_dominance": false,
+    "min_slow_ptp_fraction": 0.35
+  },
+  "blink_policy_timing": "existing conservative uniform epoch-end guard from three_policy_comparison; no future candidate hindsight",
+  "common_quality": "reuse faults_only common baseline: startup, incomplete, nonfinite, filter recovery, known-by-decision raw constant/zero; no new lower-PTP or jump rule",
+  "features": {
+    "channels": [
+      "EEG_F3",
+      "EEG_Fz",
+      "EEG_F4",
+      "EEG_T7",
+      "EEG_C3",
+      "EEG_Cz",
+      "EEG_C4",
+      "EEG_T8",
+      "EEG_CP3",
+      "EEG_CP4",
+      "EEG_P3",
+      "EEG_Pz",
+      "EEG_P4",
+      "EEG_PO7",
+      "EEG_PO8",
+      "EEG_Oz"
+    ],
+    "epoch_seconds": 0.8,
+    "sample_endpoint": "[onset, onset+ceil(.8*fs))",
+    "baseline": null,
+    "window_seconds": 0.05,
+    "windows_per_channel": 16,
+    "feature_order": "channel-major, then increasing window time; samples satisfy bin_start <= sample/fs < bin_end",
+    "units": "uV; MNE/NPZ input V converted by 1e6"
+  },
+  "split": {
+    "unit": "complete character trial",
+    "model_unit": [
+      "subject_id",
+      "session_id"
+    ],
+    "train_fraction": 0.6666666666666666,
+    "ordering": [
+      "EDF filename lexical within session",
+      "character_trial_id increasing"
+    ],
+    "rule": "first floor(2*n/3) complete trials train, remainder validate; no cross-subject models",
+    "minimum_train_characters": 2,
+    "minimum_validation_characters": 1,
+    "purge": "if raw sample overlap or training-policy lookahead reaches validation samples, fail rather than silently dropping validation characters"
+  },
+  "swlda": {
+    "implementation": "project-owned forward/backward OLS stepwise linear discriminant; binary response 0/1, not ordinary LDA",
+    "p_enter": 0.1,
+    "p_remove": 0.15,
+    "max_features": 60,
+    "max_steps": 500,
+    "rank_tolerance": 1e-10,
+    "standardize": "training retained epochs only, population std; constant features excluded",
+    "class_weighting": null,
+    "reference": "https://www.bci2000.org/mediawiki/index.php/User_Reference:P300Classifier",
+    "reproduction_limit": "classic stepwise SWLDA algorithm on requested features, not a bit-for-bit BCI2000 implementation"
+  },
+  "character_evidence": {
+    "rule": "mean score when character flashed minus mean score when not flashed",
+    "minimum_active_flashes_per_character": 1,
+    "minimum_inactive_flashes_per_character": 1,
+    "require_coverage_all_36_characters": true,
+    "tie_atol": 1e-12,
+    "rejected_flash": "no score, no evidence update; never zero imputed",
+    "stopping": "full character end only; output after all policy confirmation times and SelectedTarget boundary"
+  },
+  "auc": {
+    "own_valid_epochs": true,
+    "common_valid_epochs": true,
+    "overall": "macro over model-fold AUCs; do not pool incomparable per-model score scales"
+  },
+  "selection": "All Train/CBCol EDFs for F_03,F_05,F_06,F_08,F_20,F_25 and SE001-SE003, frozen before detection; fixed chronological 2/3 character split per subject/session"
+}
