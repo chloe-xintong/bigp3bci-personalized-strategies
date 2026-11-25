@@ -2,6 +2,7 @@
 from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
+import re
 import nbformat as nb
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,7 +15,7 @@ GROUPS = {
         '11_bigp3bci_blink_candidate_review.ipynb',
         '09_bigp3bci_reviewed_blink_false_positives.ipynb',
         '06_bigp3bci_manual_blink_threshold_validation.ipynb']),
-    '14_swlda_comparison.ipynb': ('SWLDA 拒绝策略比较', [
+    '10_swlda_comparison.ipynb': ('SWLDA 拒绝策略比较', [
         '16_bigp3bci_swlda_all_studyf.ipynb',
         '15_bigp3bci_swlda_full_three_sessions.ipynb',
         '14_bigp3bci_swlda_rejection_experiment.ipynb']),
@@ -58,12 +59,13 @@ def assemble(target, sections, metadata):
         if source not in sections:
             continue
         cells.append(nb.v4.new_markdown_cell(
-            f'---\n\n## {"主要结果" if i == 0 else "历史实验 / 专项复核"}：{source[:-6]}'))
+            f'---\n\n## {"主要结果" if i == 0 else "历史实验 / 专项复核"}：{source[3:-6]}'))
         for j, original in enumerate(sections[source]):
             cell = deepcopy(original)
             cell.metadata['report_source'] = source
             cell.id = sha256(f'{source}:{j}'.encode()).hexdigest()[:16]
             if cell.cell_type == 'markdown':
+                cell.source = re.sub(r'^# \d{2}\s*[\u00b7\u8def]\s*', '# ', cell.source)
                 for old, new in TARGETS.items():
                     cell.source = cell.source.replace(old, new)
             cells.append(cell)

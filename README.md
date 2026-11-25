@@ -55,7 +55,7 @@ python scripts/build_three_session_experiment_notebook.py --all-studyf
 python scripts/plot_swlda_all_studyf_accuracy.py
 ```
 
-Then execute `notebooks/14_swlda_comparison.ipynb` with the `bigp3bci` kernel.
+Then execute `notebooks/10_swlda_comparison.ipynb` with the `bigp3bci` kernel.
 `run_all_studyf_preprocessing.py` reuses cached per-EDF results and can be restarted after an interruption.
 
 ## Notebook index
@@ -65,10 +65,10 @@ Then execute `notebooks/14_swlda_comparison.ipynb` with the `bigp3bci` kernel.
 | 00–04 | MNE tutorial, EDF inspection, raw inspection, artifact QC, continuous manual QC | interactive |
 | [05](notebooks/05_preprocessing.ipynb) | Preprocessing: expanded pilot, then original pilot | `build_expanded_pilot_notebook.py`, `build_causal_pilot_notebook.py` |
 | [06](notebooks/06_blink_review.ipynb) | Blink detection summary, candidate review, false positives, threshold validation | Original builders update their corresponding chapter |
-| 10 | Three epoch-policy comparison | `compare_epoch_policies.py`, `configs/three_policy_comparison.json` |
-| 12 | Blink main-wave / recovery localization | `refine_blink_boundaries.py`, `configs/blink_boundary_localization.json` |
-| 13 | Bounded-prominence secondary analysis | `run_bounded_prominence_secondary.py`, `configs/bounded_prominence_secondary.json` |
-| [14](notebooks/14_swlda_comparison.ipynb) | SWLDA: all StudyF (v3), six-subject coverage (v2), original pilot (v1) | `build_three_session_experiment_notebook.py --all-studyf`, without flag for v2; `build_swlda_experiment_notebook.py` for v1 |
+| 07 | Three epoch-policy comparison | `compare_epoch_policies.py`, `configs/three_policy_comparison.json` |
+| 08 | Blink main-wave / recovery localization | `refine_blink_boundaries.py`, `configs/blink_boundary_localization.json` |
+| 09 | Bounded-prominence secondary analysis | `run_bounded_prominence_secondary.py`, `configs/bounded_prominence_secondary.json` |
+| [10](notebooks/10_swlda_comparison.ipynb) | SWLDA: all StudyF (v3), six-subject coverage (v2), original pilot (v1) | `build_three_session_experiment_notebook.py --all-studyf`, without flag for v2; `build_swlda_experiment_notebook.py` for v1 |
 
 Related reports share one notebook, with the latest coverage first and historical experiments in separate chapters. Original builders update only their own chapter and retain other chapters and saved outputs. Restart the kernel before running a selected chapter from its initialization cell; interactive review chapters retain their original instructions. Rebuilding a chapter clears that chapter's execution outputs until it is executed again. Data scopes and detector versions remain separate.
 
@@ -109,7 +109,7 @@ PTP 在滤波后以 V 计算，配置与表格为 µV。三个候选上下限为
 
 ## SWLDA epoch rejection comparison (Train development only)
 
-Run `python scripts/run_swlda_rejection_experiment.py` from the repository root. Configuration: `configs/swlda_rejection_experiment.json`. In restricted Windows environments, set `$env:_MNE_FAKE_HOME_DIR=$PWD.Path` before running. View the fully executed `notebooks/14_swlda_comparison.ipynb` for figures and step-by-step explanations. The notebook builder is `scripts/build_swlda_experiment_notebook.py`; rebuilding creates an unexecuted notebook.
+Run `python scripts/run_swlda_rejection_experiment.py` from the repository root. Configuration: `configs/swlda_rejection_experiment.json`. In restricted Windows environments, set `$env:_MNE_FAKE_HOME_DIR=$PWD.Path` before running. View the fully executed `notebooks/10_swlda_comparison.ipynb` for figures and step-by-step explanations. The notebook builder is `scripts/build_swlda_experiment_notebook.py`; rebuilding creates an unexecuted notebook.
 
 The comparison uses 12 existing Train EDFs from 6 subjects, grouped into 11 subject/session models per policy: 48 complete calibration characters and the same 24 chronological validation characters. Final Test EDFs are excluded. Source and configuration hashes, fixed split manifests, mapping checks, 256-feature definitions, selected features, SWLDA models, missing scores for rejected flashes, character predictions, per-stimulus counts, AUC and paired comparisons are saved under `outputs/swlda_rejection_experiment_v1/`.
 
@@ -134,7 +134,7 @@ python scripts/audit_swlda_saved_experiment.py outputs/swlda_three_sessions_v2
 python scripts/build_three_session_experiment_notebook.py
 ```
 
-Then execute `notebooks/14_swlda_comparison.ipynb`. Outputs are separate from v1. The combined six-subject figure shows the mean and sample SD over all three Sessions; character denominators and no-output counts remain visible in tables. Independent EDFs use separate sample clocks and filter state, so cross-file elapsed time is not fabricated. Expanded coverage also increases the per-Session calibration budget relative to the small pilot; differences from v1 cannot be attributed to coverage alone.
+Then execute `notebooks/10_swlda_comparison.ipynb`. Outputs are separate from v1. The combined six-subject figure shows the mean and sample SD over all three Sessions; character denominators and no-output counts remain visible in tables. Independent EDFs use separate sample clocks and filter state, so cross-file elapsed time is not fabricated. Expanded coverage also increases the per-Session calibration budget relative to the small pilot; differences from v1 cannot be attributed to coverage alone.
 <!-- /full-three-session-experiment -->
 
 
@@ -150,7 +150,7 @@ python scripts/audit_swlda_saved_experiment.py outputs/swlda_all_studyf_v3
 python scripts/build_three_session_experiment_notebook.py --all-studyf
 ```
 
-Execute `notebooks/14_swlda_comparison.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
+Execute `notebooks/10_swlda_comparison.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
 <!-- /all-studyf-experiment -->
 
 ## Blink candidate association with flash labels

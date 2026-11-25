@@ -7,7 +7,7 @@ cells=[]
 def md(s):cells.append(nb.v4.new_markdown_cell(textwrap.dedent(s).strip()))
 def code(s):cells.append(nb.v4.new_code_cell(textwrap.dedent(s).strip()))
 md('''
-# 10 · 固定检测参数后的三种epoch处理策略
+# 07 · 固定检测参数后的三种epoch处理策略
 
 固定正式滤波、辅助眨眼检测参数及输入数据，在当前12份已处理训练EDF上比较：
 
@@ -177,5 +177,5 @@ assert events.loc[events.strategy.eq('faults_only'),'additional_wait_seconds'].e
 print('PASS: all events preserved, common baseline identical, criteria nested, event samples unchanged, confirmation wait explicit')
 ''')
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/10_bigp3bci_three_epoch_policy_comparison.ipynb'
+p=ROOT/'notebooks/07_bigp3bci_three_epoch_policy_comparison.ipynb'
 nb.write(n,p);print(p)

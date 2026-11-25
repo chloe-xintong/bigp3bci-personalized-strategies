@@ -7,7 +7,7 @@ cells=[]
 def md(s):cells.append(nb.v4.new_markdown_cell(textwrap.dedent(s).strip()))
 def code(s):cells.append(nb.v4.new_code_cell(textwrap.dedent(s).strip()))
 md('''
-# 12 · 冻结触发条件，分离主波边界、恢复区间与判定时间
+# 08 · 冻结触发条件，分离主波边界、恢复区间与判定时间
 
 旧结果完整保留；旧595个候选ID及触发参数不变。本轮**只新增定位与恢复的工程候选规则**，不重新调20/25µV触发条件，也不对旧人工边界统一减114/225ms。
 
@@ -221,4 +221,4 @@ assert summary.total.eq(9054).all()
 print('PASS: frozen triggers and old results preserved; domains and decision availability explicit; old overlap count reproduced')
 ''')
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/12_bigp3bci_blink_main_recovery_localization.ipynb';nb.write(n,p);print(p)
+p=ROOT/'notebooks/08_bigp3bci_blink_main_recovery_localization.ipynb';nb.write(n,p);print(p)
