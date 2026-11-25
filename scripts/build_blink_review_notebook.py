@@ -1,6 +1,7 @@
 ﻿"""Build UTF-8 notebook 11: main-wave-only interactive candidate review."""
 from pathlib import Path
 import nbformat as nb
+from notebook_reports import write_report
 from blink_review_panel_cells import panel_cells
 ROOT=Path(__file__).resolve().parents[1]
 md=nb.v4.new_markdown_cell
@@ -101,5 +102,5 @@ print('主波复核入口已准备好，原始EDF及历史标注未修改。')
 ''')])
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
 p=ROOT/'notebooks/11_bigp3bci_blink_candidate_review.ipynb'
-nb.write(n,p)
+write_report(n,p)
 print(p)

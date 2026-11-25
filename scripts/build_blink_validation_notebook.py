@@ -2,6 +2,7 @@
 from pathlib import Path
 import textwrap
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
 cells=[]
 def md(s): cells.append(nb.v4.new_markdown_cell(textwrap.dedent(s).strip()))
@@ -184,4 +185,4 @@ print('PASS: 正例重叠、评估分母与未知区间处理检查通过；未�
 ''')
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
 p=ROOT/'notebooks/06_bigp3bci_manual_blink_threshold_validation.ipynb'
-nb.write(n,p);print(p)
+write_report(n,p);print(p)

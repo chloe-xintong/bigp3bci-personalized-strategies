@@ -1,7 +1,8 @@
 """Build the explanatory notebook from saved causal pilot outputs."""
 from pathlib import Path
 import textwrap
-import nbformat as nbf
+import nbformat as nb
+from notebook_reports import write_reportf
 ROOT = Path(__file__).resolve().parents[1]
 cells=[]
 def md(s): cells.append(nbf.v4.new_markdown_cell(textwrap.dedent(s).strip()))

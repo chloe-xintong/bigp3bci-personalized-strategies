@@ -2,6 +2,7 @@
 from pathlib import Path
 import argparse
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
 parser.add_argument('--all-studyf',action='store_true')
@@ -172,5 +173,5 @@ print('All StudyF Train files included; no StudyB and no final Test; no detector
 '''))
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
 p=ROOT/('notebooks/16_bigp3bci_swlda_all_studyf.ipynb' if args.all_studyf else 'notebooks/15_bigp3bci_swlda_full_three_sessions.ipynb')
-nb.write(n,p)
+write_report(n,p)
 print(p)

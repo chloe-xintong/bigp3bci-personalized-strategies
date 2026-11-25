@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import nbformat as nb
+from notebook_reports import write_report
 from bigp3bci_continuous_qc import read_bigp3bci_edf
 STEM='F_05_SE003_CBCol_Train04'
 OUT=ROOT/'outputs/blink_annotation_update/reviewed_0_35';OUT.mkdir(parents=True,exist_ok=True)
@@ -77,6 +78,6 @@ md('''## 当前判断
 
 重新计算并画图：`scripts/inspect_reviewed_blinks.py`。最新全文件人工对照：notebook08。''')
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-nb.write(n,ROOT/'notebooks/09_bigp3bci_reviewed_blink_false_positives.ipynb')
+write_report(n,ROOT/'notebooks/09_bigp3bci_reviewed_blink_false_positives.ipynb')
 assert len(t[t.startup.eq(False)])==15 and len(unmatched[~unmatched.startup])==3
 print(unmatched[['onset_seconds','offset_seconds','startup']].to_string(index=False))
