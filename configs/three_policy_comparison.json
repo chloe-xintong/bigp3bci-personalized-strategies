@@ -1,0 +1,47 @@
+{
+  "status": "fixed-parameter simulated policy comparison; no training or actual deletion",
+  "source_config": "configs/expanded_pilot.json",
+  "source_manifest": "outputs/blink_annotation_update/all_processed_detection_summary.csv",
+  "qc_channels": [
+    "EEG_F3",
+    "EEG_Fz",
+    "EEG_F4",
+    "EEG_T7",
+    "EEG_C3",
+    "EEG_Cz",
+    "EEG_C4",
+    "EEG_T8",
+    "EEG_CP3",
+    "EEG_CP4",
+    "EEG_P3",
+    "EEG_Pz",
+    "EEG_P4",
+    "EEG_PO7",
+    "EEG_PO8",
+    "EEG_Oz"
+  ],
+  "hard_faults": [
+    "incomplete",
+    "filter_startup",
+    "nonfinite",
+    "filtered_nonfinite",
+    "filter_recovery",
+    "raw_constant",
+    "raw_zero"
+  ],
+  "report_only": [
+    "CANDIDATE_jump",
+    "CANDIDATE_flat",
+    "persistent_channel_candidate"
+  ],
+  "ptp_primary_upper_uv": 250.0,
+  "ptp_sensitivity_upper_uv": [
+    150.0
+  ],
+  "ptp_lower_rejection": null,
+  "blink_overlap_rule": "any positive sample overlap with existing CANDIDATE_blink; no padding or detector retuning",
+  "blink_online_policy": "uniform conservative confirmation guard: epoch stop + ceil(max_duration*fs) + max(ceil(recovery*fs),ceil(merge_gap*fs)); record EOF pending separately",
+  "reviewed_intervals": "outputs/artifact_qc/continuous_manual_qc/manual/reviewed_intervals.csv",
+  "reviewed_comparison": "only entire epochs inside explicit complete review intervals; positive means overlap suspected manual blink, not mandatory rejection",
+  "scope": "existing 12 training files; original 8 and annotation-selected supplements separate"
+}

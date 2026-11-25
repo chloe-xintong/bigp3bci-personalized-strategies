@@ -1,0 +1,16 @@
+﻿{
+  "version": "local_plateau_metrics_v1",
+  "status": "exploratory feature comparison, not a validated acceptance or rejection rule",
+  "input_domain": "existing raw EEG causal notch60 + lowpass10Hz localization branch",
+  "frontal_channels": ["EEG_F3", "EEG_Fz", "EEG_F4"],
+  "pre_platform_window_relative_peak_seconds": [-0.35, -0.15],
+  "post_platform_window_relative_peak_seconds": [0.15, 0.35],
+  "platform_spread_quantiles": [0.1, 0.9],
+  "candidate_max_platform_spread_uv": 15.0,
+  "candidate_max_abs_platform_slope_uv_per_sec": 30.0,
+  "candidate_local_excursion_uv": 25.0,
+  "minimum_support_channels": 2,
+  "polarity": "evaluate both directions; no required upward polarity",
+  "decision": "max(frozen detector confirmation, post-platform observation end); no backdating",
+  "application": "measure existing 595 candidates only; do not suppress, change boundaries, alter notebook11 or reject epochs"
+}

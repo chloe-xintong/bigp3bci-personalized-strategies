@@ -1,0 +1,59 @@
+{
+  "version": "boundary_localization_v1",
+  "status": "unvalidated morphology localization; frozen detector unchanged; no global time correction",
+  "localization_branch": {
+    "input": "raw EEG, independent from official/trigger branch",
+    "notch_hz": 60.0,
+    "notch_q": 30.0,
+    "lowpass_hz": 10.0,
+    "lowpass_order": 2,
+    "initialization": "steady_first_sample",
+    "chunk_seconds": 1.0,
+    "startup_seconds": 10.0
+  },
+  "frontal_channels": [
+    "EEG_F3",
+    "EEG_Fz",
+    "EEG_F4"
+  ],
+  "baseline_start_before_trigger_seconds": 0.9,
+  "baseline_end_before_trigger_seconds": 0.55,
+  "peak_search_before_trigger_seconds": 0.4,
+  "peak_search_after_trigger_seconds": 0.3,
+  "onset_lookback_seconds": 0.7,
+  "onset_fraction_of_peak": 0.15,
+  "offset_fraction_of_peak": 0.15,
+  "boundary_floor_uv": 5.0,
+  "onset_quiet_seconds": 0.04,
+  "offset_quiet_seconds": 0.06,
+  "min_main_duration_seconds": 0.08,
+  "max_main_duration_seconds": 1.2,
+  "minimum_localization_peak_uv": 20.0,
+  "minimum_same_sign_frontal_support": 2,
+  "support_peak_fraction": 0.5,
+  "main_end_search_after_peak_seconds": 0.8,
+  "recovery": {
+    "domain": "official 0.5?30Hz EEG; frontal channels only",
+    "floor_uv": 10.0,
+    "fraction_of_formal_peak": 0.2,
+    "quiet_seconds": 0.12,
+    "maximum_after_main_seconds": 1.5,
+    "meaning": "heuristic quiet criterion only, not proof signal is clean"
+  },
+  "multi_peak_audit": {
+    "minimum_distance_seconds": 0.12,
+    "prominence_uv": 15.0,
+    "valley_fraction": 0.4,
+    "note": "flag possible merged/adjacent waveforms; never automatically merge/split accepted detector IDs",
+    "near_duplicate_peak_seconds": 0.08
+  },
+  "fallback_policy": "uncertain or censored localization retains old interval for operational overlap comparison",
+  "comparison_schemes": [
+    "faults_only",
+    "old_candidate_overlap",
+    "main_only_with_old_fallback",
+    "main_plus_recovery_with_old_fallback"
+  ],
+  "reviewed_intervals": "outputs/artifact_qc/continuous_manual_qc/manual/reviewed_intervals.csv",
+  "manual_boundary_comparison": "original manual marks are raw-domain; exported new localization branch permits comparable reannotation; differences only descriptive"
+}

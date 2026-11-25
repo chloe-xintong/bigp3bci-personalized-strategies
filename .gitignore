@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+
+# Jupyter temporary files
+.ipynb_checkpoints/
+
+# Data: raw EDFs are downloaded separately (see README); never commit
+data/
+*.edf
+*.EDF
+*.fif
+*.fif.gz
+
+# All generated results (regenerate with scripts/; several GB)
+outputs/
+*.log
+*.npz
+*.npy
+
+# Local tool state / scratch
+.mne/
+tmp_*.txt
+
+# Generated plots and common large binary files
+*.png
+*.jpg
+*.jpeg
+*.parquet
+*.pkl
+*.pickle
+# ...except curated figures shown in the README
+!docs/figures/*.png
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
