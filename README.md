@@ -154,3 +154,20 @@ python scripts/build_three_session_experiment_notebook.py --all-studyf
 
 Execute `notebooks/16_bigp3bci_swlda_all_studyf.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
 <!-- /all-studyf-experiment -->
+
+## Blink candidate association with flash labels
+
+Run `python scripts/summarize_blink_label_association.py` after all-StudyF preprocessing.
+The script verifies cached epoch-table hashes and summarizes all 68,004 Train flashes,
+without quality-based rejection, by subject and subject/Session under
+`outputs/blink_label_association/`. Candidate-positive flashes overlap at least one
+`old_candidate_overlap_v1` interval within the 0–800 ms epoch; these counts differ
+from unique candidate events because flash windows overlap.
+
+The subject-stratified Mantel–Haenszel target/non-target odds ratio is 1.52, with a
+95% percentile interval of 0.85–3.58 from 50,000 whole-subject bootstrap samples
+(seed 20261125). Only ten subject clusters are available, and this wide interval
+does not establish equivalence or absence of association. F_05 has candidate
+overlap in 685/756 target and 3,470/6,048 non-target flashes; F_25 has 275/756 and
+2,109/6,048, respectively. These are engineering candidates rather than confirmed
+blinks, and this descriptive analysis does not change the preprocessing policy.
