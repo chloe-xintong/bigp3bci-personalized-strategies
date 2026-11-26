@@ -1,0 +1,16 @@
+{
+  "experiment": "session_drift_descriptive_v1",
+  "source_budget_experiment": "outputs/swlda_calibration_budget_train_validation_v1",
+  "scope": "Descriptive Train only. S1/S2 all historical Train characters, S3 first 12 calibration characters; never use last-six validation characters or Test",
+  "policy": "A",
+  "covariance": "Per retained 0-800ms epoch, temporal channel demeaning and ddof=1 covariance in uV^2; arithmetic mean across epochs in session",
+  "regularization": {"trace_identity_shrinkage": 0.000001},
+  "distance": "Frobenius norm of difference of symmetric matrix logs, divided by sqrt(16); also export unnormalized distance",
+  "small_distance_threshold": 0.19062035960864987,
+  "small_distance_interpretation": "2*log(1.1), equivalent to 10% uniform amplitude gain if covariance differs only by uniform gain; operational engineering threshold, not a universal norm",
+  "s2_closer_rule": {"distance_ratio_max": 0.8, "minimum_subjects": 8, "require_not_all_pairs_small": true},
+  "all_small_rule": "All three pairs S1-S2, S1-S3, S2-S3 are at or below the small threshold for every subject",
+  "amplitude": "Per epoch/channel signed temporal mean, mean absolute voltage and RMS; summarize session mean and epoch quartiles; no label conditioning",
+  "plots": "Ten subjects in 2x5 panels, shared y scale, fixed session colors; IQR shows distribution across overlapping epochs, not a confidence interval",
+  "follow_up": "No EA in this run. Report drift only, then user decides whether an EA comparison is warranted. Do not change main experiment."
+}

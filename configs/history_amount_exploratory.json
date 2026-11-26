@@ -1,0 +1,20 @@
+{
+  "experiment": "history_amount_exploratory_v1",
+  "source_budget_experiment": "outputs/swlda_calibration_budget_train_validation_v1",
+  "history_sessions": ["SE001", "SE002"],
+  "current_session": "SE003",
+  "history_file_counts": [0, 1, 2, 3, 4, 5, 6],
+  "k_values": [0, 3, 6, 12],
+  "characters_per_history_file": 6,
+  "validation": "Last six chronological SE003 Train characters; first 12 are the calibration pool",
+  "swlda_sampling": "Enumerate all combinations of six complete historical EDF files; average subsets within subject before macro averaging",
+  "primary_metric": "Validation flash ROC-AUC, subject macro mean",
+  "policy": "A",
+  "channel_selection": "Fixed 16 channels; no learned channel selection",
+  "bootstrap": {"unit": "subject", "replicates": 10000, "seed": 20261126, "interval": "percentile 2.5%, 97.5%; paired indices for differences"},
+  "display": {"jitter_seed": 20261126, "jitter_characters": 0.35, "shared_y_axis": true, "subject_grid": [2, 5], "macro_panel": "last, full-width row"},
+  "session_contrast": "Mean pure-S2 subset AUC minus mean pure-S1 subset AUC within subject, for equal H=1,2,3",
+  "undefined": "H=0,k=0 has no model; do not report accuracy or a current-only comparison at k=0",
+  "eegnet_plan": {"status": "manifest only; no EEGNet implementation or training in this analysis", "subset_seeds": [0, 1, 2, 3, 4], "fixed_epochs": null, "checkpoint_selection": "None; fixed epoch count must be specified before future training", "subsets": "Five seeded selections per H, shared across k; repeated subsets across seeds are allowed, including identical H=0 and H=6 selections"},
+  "scope": "Exploratory, after seeing prior test results. Train validation only. Do not open Test, retune per H, omit unfavorable subsets, or change main/test results. Character accuracy is descriptive only."
+}
