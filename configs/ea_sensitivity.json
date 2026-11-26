@@ -1,0 +1,45 @@
+{
+  "experiment": "ea_sensitivity_v1",
+  "source_history_experiment": "outputs/history_amount_exploratory_v1",
+  "history_sessions": ["SE001", "SE002"],
+  "current_session": "SE003",
+  "history": "All six SE001/SE002 Train EDFs (H=6, 36 characters); no subsets",
+  "k_values": [3, 6, 12],
+  "k0": "Not reported: S3 has no allowed data for R at k=0",
+  "conditions": {
+    "A": "history + current, no alignment (main design; must reproduce history_amount H=6)",
+    "B": "history + current, session-wise EA",
+    "current_only": "current only, no alignment (must reproduce history_amount H=0)",
+    "C": "current only, EA with R_S3(k)"
+  },
+  "reference_data": {
+    "SE001": "All SE001 Train characters (historical)",
+    "SE002": "All SE002 Train characters (historical)",
+    "SE003": "First k calibration characters only; never the last-six validation characters, Test, Static or unlabeled current data"
+  },
+  "trials_for_reference": "Policy-A retained flashes (after filtering and guard/fault exclusion), all flashes regardless of label; labels are never used to compute R",
+  "covariance": "Per retained 0-800 ms epoch, temporal channel demeaning, ddof=1, uV^2; arithmetic mean over epochs (identical to session_drift_descriptive_v1)",
+  "regularization": {"trace_identity_shrinkage": 0.001},
+  "transform": "X -> R_s^(-1/2) X via symmetric eigendecomposition; applied before 16x16 window-mean features; implemented on cached features because window means commute with channel-space linear maps, verified against raw epochs at run time",
+  "validation": "SE003 Train last six characters, aligned with R_S3(k) computed from the first k characters only",
+  "model": "SWLDA with the frozen main settings; EEGNet only if SWLDA meets the predeclared clear-change rule",
+  "policy": "A",
+  "primary_metric": "Validation flash ROC-AUC, same exclusions as the main experiment (7,560 flashes, 7,340 retained)",
+  "comparisons": {"ea_with_history": "B - A", "ea_current_only": "C - current_only"},
+  "bootstrap": {"unit": "subject", "replicates": 10000, "seed": 20261126, "interval": "percentile 2.5%, 97.5%; paired subject indices"},
+  "decision_rules": {
+    "report_only": "Results never change the main design and never re-select it",
+    "direction_minimum_same_sign": 8,
+    "direction_rule": "Direction is 'consistent' only if at least 8 of 10 subjects share the sign of the macro mean difference; otherwise report per subject and draw no conclusion from the mean",
+    "clear_change_for_eegnet": "Any k where macro B-A CI excludes 0, direction is consistent, and |macro B-A| >= 0.01 AUC",
+    "clear_change_min_abs_auc": 0.01
+  },
+  "highlight_subjects": ["F_07", "F_21"],
+  "highlight_reason": "Largest S1-to-S3 versus S2-to-S3 drift asymmetry in session_drift_descriptive_v1",
+  "limits": [
+    "At k=3 R_S3 rests on about 378 flashes and may be unstable; R_S3(k) to R_S3(12) distance is reported",
+    "EA is linear; SWLDA then z-scores pooled training features, so the per-feature scaling interacts with EA",
+    "Only session-wise EA is tested; Riemannian alignment and other variants are out of scope"
+  ],
+  "scope": "Exploratory sensitivity analysis on Train validation. Does not change the main design or any reported result. No Test."
+}

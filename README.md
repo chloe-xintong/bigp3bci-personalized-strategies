@@ -4,7 +4,10 @@ Development pipeline for the bigP3BCI dataset (StudyF, row/column P300 speller).
 preprocessing, epoch-level quality control and blink-candidate detection. It then compares how three
 epoch-rejection strategies affect character accuracy with a project-owned SWLDA classifier.
 
-All results so far are **development results on Train EDFs only**. Final Test files have not been used.
+Current experiments use Train EDFs only. The calibration-budget experiment
+reserves the last six SE003 Train characters for validation and uses flash-level
+ROC-AUC as its primary metric. The discarded Static experiment and its outputs
+were removed; no Test EDFs are opened by the current pipeline.
 
 ![Character accuracy by rejection strategy](docs/figures/character_accuracy_by_strategy.png)
 
@@ -69,6 +72,9 @@ Then execute `notebooks/10_swlda_comparison.ipynb` with the `bigp3bci` kernel.
 | 08 | Blink main-wave / recovery localization | `refine_blink_boundaries.py`, `configs/blink_boundary_localization.json` |
 | 09 | Bounded-prominence secondary analysis | `run_bounded_prominence_secondary.py`, `configs/bounded_prominence_secondary.json` |
 | [10](notebooks/10_swlda_comparison.ipynb) | SWLDA: all StudyF (v3), six-subject coverage (v2), original pilot (v1) | `build_three_session_experiment_notebook.py --all-studyf`, without flag for v2; `build_swlda_experiment_notebook.py` for v1 |
+| [11](notebooks/11_swlda_calibration_budget.ipynb) | SWLDA calibration budgets: last-six SE003 Train validation, flash ROC-AUC | `build_swlda_budget_notebook.py`, `configs/swlda_calibration_budget.json` |
+| [12](notebooks/12_history_amount_exploratory.ipynb) | Exploratory historical-file amount H versus current budget k; subject small multiples and paired bootstrap | `run_history_amount_exploratory.py`, `configs/history_amount_exploratory.json` |
+| [13](notebooks/13_ea_sensitivity.ipynb) | Exploratory session-wise Euclidean alignment sensitivity (B-A, C-current only) with SWLDA | `run_ea_sensitivity.py`, `configs/ea_sensitivity.json` |
 
 Related reports share one notebook, with the latest coverage first and historical experiments in separate chapters. Original builders update only their own chapter and retain other chapters and saved outputs. Restart the kernel before running a selected chapter from its initialization cell; interactive review chapters retain their original instructions. Rebuilding a chapter clears that chapter's execution outputs until it is executed again. Data scopes and detector versions remain separate.
 
@@ -152,6 +158,108 @@ python scripts/build_three_session_experiment_notebook.py --all-studyf
 
 Execute `notebooks/10_swlda_comparison.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
 <!-- /all-studyf-experiment -->
+
+## SWLDA calibration budgets with Train holdout validation
+
+```powershell
+python scripts/run_swlda_calibration_budget.py
+```
+
+Configuration: `configs/swlda_calibration_budget.json`. Output:
+`outputs/swlda_calibration_budget_train_validation_v1/`. Existing outputs are
+preserved; use a new `--output` directory for a rerun. A short check can use
+`--subjects F_05 --k-values 0 1 12 --output outputs/<new-name>`.
+
+View the executed [notebook 11](notebooks/11_swlda_calibration_budget.ipynb).
+Rebuild with `python scripts/build_swlda_budget_notebook.py`; its cells only
+read saved results, without training.
+
+Each subject has a separate model. History is all 36 SE001/SE002 Train characters.
+SE003 Train has 18 characters: the first 12 form the calibration pool and the
+last six are fixed validation, so k ranges from 0 through 12. Four curves compare
+current only, both historical Sessions plus current, SE001 history plus current,
+and SE002 history plus current. Test/Static, Dyn and DynBigram are excluded.
+
+The primary metric is per-subject validation flash ROC-AUC, macro-averaged across
+subjects. Raw scores from separate subject models are not pooled into one AUC.
+Character accuracy is secondary. Flash scores and QC flags are exported to
+`flash_predictions.csv`; overlapping flash epochs are not independent observations.
+SWLDA raw scores are not probabilities. Weighted flash log-loss is calculated
+after a training-only Platt sigmoid fitted on whole-character out-of-fold scores
+(up to three folds); current-only k=1 explicitly falls back to in-sample training
+scores because there is only one character. Validation data never fit the sigmoid.
+The sigmoid retains the natural training prior. The evaluation loss averages the
+two class-specific mean negative log-likelihoods with equal weight, then averages
+subjects. No fixed 1:5 label ratio is assumed. Current-only k=0 has no model.
+
+`python scripts/add_weighted_logloss.py` appends this metric to an existing run
+under `weighted_logloss/`, preserving original predictions and AUC. New complete
+runs execute this step automatically. The extension includes per-flash probabilities,
+calibrator parameters, fallback flags and weighted log-loss curves.
+
+All models use the predefined 16 channels, existing 256-dimensional fixed causal
+features and policy A. Scaling and SWLDA feature selection use only the retained
+training epochs allowed by that model's budget. No validation character is used
+for fitting. Endpoint refits verify predictions and weights; the data-rich reference
+uses 36 historical plus 12 current calibration characters and is not budget-matched
+to smaller k. It is not a mathematical upper bound.
+
+No EEGNet training loop currently exists. `src/bigp3bci_flash_early_stopping.py`
+provides flash-AUC and class-balanced flash-log-loss checkpoint interfaces for a
+future EEGNet loop. Predeclare one metric: save weights when AUC increases or
+weighted log-loss decreases, stop after the configured patience, and restore the
+best checkpoint. Training class weights can be calculated from the allowed training
+labels with `bigp3bci_probability.binary_class_weights`. Adding an evaluation metric
+alone does not reweight SWLDA training. Character accuracy must not choose the epoch.
+These are development validation results, not an independent final test.
+
+## Exploratory historical data amount
+
+The frozen [protocol](docs/history_amount_exploratory_protocol.md) enumerates every
+subset of each subject's six SE001/SE002 Train EDFs, with H=0..6 and k in
+{0,3,6,12}. Current calibration uses the first 12 SE003 Train characters; the
+last six remain validation. H=0,k=0 is undefined, leaving 2,550 fitted models.
+No Test files are read, no parameters are tuned per H, and no unfavorable subsets
+are removed. This is explicitly exploratory work after prior test results were seen.
+
+```powershell
+python scripts/run_history_amount_exploratory.py
+python scripts/build_history_amount_notebook.py
+```
+
+Outputs are in `outputs/history_amount_exploratory_v1/`. The run checkpoints each
+model and resumes with unchanged configuration and input hashes. Notebook 12
+shows shared-axis 2-by-5 subject panels followed by a macro panel, all subset
+points, same-k current-only references, and 10,000-replicate subject-bootstrap
+intervals. Tables include per-subject subset means, paired differences from
+current-only, and pure-SE002 minus pure-SE001 contrasts at H=1,2,3. Character
+accuracy is descriptive only. EEGNet has only a seeded subset manifest: no
+network results are reported, and a fixed epoch count must be set before future
+training; this exploratory validation set must not choose its checkpoint.
+
+## Exploratory Euclidean alignment sensitivity
+
+The frozen [protocol](docs/ea_sensitivity_protocol.md) asks whether session-wise
+Euclidean alignment (EA) changes history-plus-current SWLDA performance. Each
+session's reference covariance uses only its allowed data: all SE001/SE002 Train
+characters, and only the first k SE003 calibration characters (never the six
+validation characters or Test), with fixed shrinkage 0.001. EA is applied after
+preprocessing and before the 16x16 window features; because window means commute
+with channel-space linear maps it is applied to cached features, verified against
+raw epochs. Only k=3, 6, 12 are reported (k=0 has no S3 data for R). Conditions:
+A (history+current, no EA; reproduces notebook 12 H=6), B (history+current, EA),
+current only, and C (current only, EA).
+
+```powershell
+python scripts/run_ea_sensitivity.py
+python scripts/build_ea_sensitivity_notebook.py
+```
+
+Result (exploratory, report only): macro B-A is +0.001/+0.005/+0.007 AUC at
+k=3/6/12 with all subject-bootstrap CIs including 0, and subject directions are
+inconsistent (5-6 of 10 positive), so results are reported per subject. F_07, the
+subject with the largest drift asymmetry, improves by +0.04 to +0.07. The
+predeclared EEGNet follow-up rule was not met, and the main design is unchanged.
 
 ## Blink candidate association with flash labels
 
