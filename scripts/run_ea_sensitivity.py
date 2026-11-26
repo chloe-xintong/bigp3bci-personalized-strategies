@@ -18,6 +18,7 @@ import pandas as pd
 
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'));sys.path.insert(0,str(ROOT/'scripts'))
 from bigp3bci_swlda import fit_swlda,score_swlda,auc_rank,decode_character,window_features
+from bigp3bci_data_policy import require_train_edf,require_train_record
 from bigp3bci_euclidean_alignment import (trial_covariances,shrink,inverse_sqrt,align_epochs,align_features,
                                           log_distance,bootstrap_deltas)
 
@@ -79,7 +80,8 @@ def main():
         for item in manifest[manifest.subject_id.eq(subject)].itertuples():
             folder=ROOT/item.results_path;record_path=folder/'processing_record.json'
             record=json.loads(record_path.read_text())
-            if Path(record['source_edf']).parts[-3]!='Train' or digest(record_path)!=item.source_record_sha256:raise ValueError('Changed/non-Train input')
+            require_train_record(record)
+            if digest(record_path)!=item.source_record_sha256:raise ValueError('Changed input')
             rows=sub[sub.edf_name.eq(item.edf_name)].sort_values('event_index')
             with np.load(folder/'epochs_all.npz') as data:
                 if data['channels'].tolist()!=channels:raise ValueError('Epoch channel order differs')

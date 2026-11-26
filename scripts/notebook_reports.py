@@ -6,20 +6,32 @@ import re
 import nbformat as nb
 
 ROOT = Path(__file__).resolve().parents[1]
+# Keys are report notebooks; values list the section sources (builder output
+# names, used only as section IDs), main result first, appendices after.
 GROUPS = {
-    '05_preprocessing.ipynb': ('预处理与候选检测', [
+    '01_data_inventory.ipynb': ('数据清单与原始检查', [
+        '02_bigp3bci_raw_inspection.ipynb',
+        '01_edf_inspection_and_preprocessing.ipynb',
+        '03_bigp3bci_artifact_qc.ipynb']),
+    '02_preprocessing.ipynb': ('预处理与候选检测', [
         '07_bigp3bci_expanded_candidate_pilot.ipynb',
         '05_bigp3bci_causal_preprocessing_pilot.ipynb']),
-    '06_blink_review.ipynb': ('眨眼检测与人工复核', [
+    '03_blink_review.ipynb': ('眨眼检测与人工复核', [
         '08_bigp3bci_current_blink_detection_summary.ipynb',
         '11_bigp3bci_blink_candidate_review.ipynb',
         '09_bigp3bci_reviewed_blink_false_positives.ipynb',
         '06_bigp3bci_manual_blink_threshold_validation.ipynb']),
-    '10_swlda_comparison.ipynb': ('SWLDA 拒绝策略比较', [
+    '04_blink_boundaries_secondary.ipynb': ('眨眼边界与二次确认', [
+        '08_bigp3bci_blink_main_recovery_localization.ipynb',
+        '09_bigp3bci_bounded_prominence_secondary.ipynb']),
+    '06_swlda_comparison.ipynb': ('SWLDA 拒绝策略比较', [
         '16_bigp3bci_swlda_all_studyf.ipynb',
         '15_bigp3bci_swlda_full_three_sessions.ipynb',
         '14_bigp3bci_swlda_rejection_experiment.ipynb']),
 }
+HEADER = ('按功能合并的报告：先给主要结果，附录保留早期实验与复核记录。各章节的数据范围、阈值版本和输出彼此独立。'
+          '\n\n运行某一章节时，先重启 kernel，再从该章节的初始化单元开始；人工交互章节按其中的说明操作。'
+          '运行对应的 builder 会更新该章节，其他章节保持不变。')
 TARGETS = {source: target for target, (_, sources) in GROUPS.items() for source in sources}
 
 
@@ -51,11 +63,8 @@ def write_report(notebook, path):
 def assemble(target, sections, metadata):
     title, sources = GROUPS[target]
     cells = [nb.v4.new_markdown_cell(
-        f'# {title}\n\n按功能合并的报告。首先展示最新覆盖范围，其后保留早期实验与复核记录。'
-        '\n\n各章节的数据范围、阈值版本和历史输出独立，不能合并为同一个实验。'
-        '重新运行时请重启 kernel，从所需章节的初始化单元开始；人工交互章节按原说明操作。'
-        '\n\n更新：运行原报告 builder 会直接更新对应章节，保留其他章节的结果。')]
-    if target == '06_blink_review.ipynb':
+        f'# {title}\n\n{HEADER}')]
+    if target == '03_blink_review.ipynb':
         from blink_single_review_cells import single_review_cells
         from blink_duration_report_cells import duration_report_cells
         cells.extend(single_review_cells())
@@ -64,7 +73,7 @@ def assemble(target, sections, metadata):
         if source not in sections:
             continue
         cells.append(nb.v4.new_markdown_cell(
-            f'---\n\n## {"主要结果" if i == 0 else "历史实验 / 专项复核"}：{source[3:-6]}'))
+            f'---\n\n## {"主要结果" if i == 0 else "附录"}：{source[3:-6]}'))
         for j, original in enumerate(sections[source]):
             cell = deepcopy(original)
             cell.metadata['report_source'] = source
@@ -76,6 +85,9 @@ def assemble(target, sections, metadata):
             cells.append(cell)
     report = nb.v4.new_notebook(cells=cells, metadata=deepcopy(metadata[sources[0]]))
     report.metadata['source_metadata'] = metadata
+    if target == '02_preprocessing.ipynb':
+        from plot_filter_site_examples import attach_filter_cells
+        report = attach_filter_cells(report)
     nb.validate(report)
     destination = ROOT / 'notebooks' / target
     nb.write(report, destination)
@@ -93,6 +105,10 @@ def main():
                 sections[source] = notebook.cells
                 metadata[source] = notebook.metadata
                 originals.append(path)
+        if not originals:
+            # Already consolidated; re-assembling would drop outputs of the
+            # untagged cells inserted by assemble().
+            continue
         if set(sections) != set(sources):
             raise ValueError(f'Missing source sections for {target}')
         # The old 05 report repeated an overview of 07; 07 is now in this file.

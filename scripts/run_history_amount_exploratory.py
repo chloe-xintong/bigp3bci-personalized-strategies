@@ -13,6 +13,7 @@ import pandas as pd
 
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src'))
 from bigp3bci_swlda import fit_swlda,score_swlda,auc_rank,decode_character
+from bigp3bci_data_policy import require_train_edf,require_train_record
 from bigp3bci_calibration_budget import make_plan
 from bigp3bci_history_amount import enumerate_subsets,summarize_history
 
@@ -51,7 +52,7 @@ def main():
     for r in preprocessing.itertuples():
         record_path=ROOT/r.results_path/'processing_record.json'
         rec=json.loads(record_path.read_text())
-        if Path(rec['source_edf']).parts[-3]!='Train':raise ValueError('No Test sources permitted')
+        require_train_record(rec)
         if digest(record_path)!=r.source_record_sha256:raise ValueError('Cached Train processing changed')
     paths=[source_budget/'config_snapshot.json',source_budget/'fixed_validation_characters.csv',
            source_budget/'subject_results.csv',source/'character_split.csv',source/'epoch_scores.csv',source/'epoch_split.csv',

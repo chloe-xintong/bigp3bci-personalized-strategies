@@ -1,4 +1,4 @@
-"""Redraw notebook 11 figures from saved CSVs; no model is refitted."""
+"""Redraw notebook 07 figures from saved CSVs; no model is refitted."""
 from pathlib import Path
 import argparse
 import json

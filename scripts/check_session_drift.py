@@ -12,6 +12,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 ROOT=Path(__file__).resolve().parents[1]
+import sys;sys.path.insert(0,str(ROOT/'src'))
+from bigp3bci_data_policy import require_train_edf,require_train_record
 
 
 def digest(path):
@@ -73,7 +75,8 @@ def main():
         selected=epochs[epochs.edf_name.eq(item.edf_name)].sort_values('event_index')
         if selected.empty:continue
         folder=ROOT/item.results_path;record_path=folder/'processing_record.json';record=json.loads(record_path.read_text())
-        if Path(record['source_edf']).parts[-3]!='Train' or digest(record_path)!=item.source_record_sha256:raise ValueError('Changed/non-Train input')
+        require_train_record(record)
+        if digest(record_path)!=item.source_record_sha256:raise ValueError('Changed input')
         if record['channels']!=channels:raise ValueError('Channel order differs')
         with np.load(folder/'epochs_all.npz') as data:
             if data['channels'].tolist()!=channels:raise ValueError('Epoch channels differ')

@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 ROOT=Path(__file__).resolve().parents[1]
 os.environ.setdefault('_MNE_FAKE_HOME_DIR',str(ROOT))
 sys.path.insert(0,str(ROOT/'src'))
+from bigp3bci_data_policy import require_train_edf,require_train_record
 from bigp3bci_swlda import fit_swlda,score_swlda,decode_character,auc_rank
 from bigp3bci_calibration_budget import make_plan,training_keys
 from bigp3bci_preprocessing import file_hash
@@ -49,7 +50,7 @@ def main():
     manifest=pd.read_csv(ROOT/source_cfg['input_manifest'])
     for r in manifest.itertuples():
         rec=json.loads((ROOT/r.results_path/'processing_record.json').read_text())
-        if Path(rec['source_edf']).parts[-3]!='Train':raise ValueError('No Test sources permitted')
+        require_train_record(rec)
         if file_hash(ROOT/r.results_path/'processing_record.json')!=r.source_record_sha256:
             raise ValueError('Cached preprocessing record changed')
     trials=pd.read_csv(source/'character_split.csv')

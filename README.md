@@ -22,9 +22,10 @@ configs/    frozen JSON configurations, one per experiment
 src/        reusable modules (preprocessing, QC, blink detection, policies, SWLDA)
 scripts/    run_*  -> run an experiment and write outputs/<name>/
             build_*_notebook.py -> regenerate the matching report notebook
-notebooks/  executed report notebooks (00–16), read from outputs/
+notebooks/  report notebooks 01–09 (10 = EEGNet, planned) and appendix A1, read from outputs/
+learning/   MNE tutorial notebook (not part of the analysis)
 tests/      unittest suite
-docs/       curated figures shown in this README
+docs/       protocols, experiment log, detector freeze note, figures shown in this README
 data/       (not tracked) raw EDFs
 outputs/    (not tracked) all generated results; recreate with scripts/
 ```
@@ -42,11 +43,51 @@ Download the bigP3BCI dataset from PhysioNet (https://physionet.org/content/bigp
 that the StudyF EDFs sit at `data/raw/bigP3BCI-data/StudyF/<subject>/SE00x/Train/<run>/*.edf`.
 In restricted Windows environments, set `$env:_MNE_FAKE_HOME_DIR=$PWD.Path` before running scripts.
 
+Notebooks 01 and 04 are development notebooks and are committed without outputs. Register the
+output filter once per clone (`.gitattributes` applies it to those two files only):
+
+```bash
+git config filter.nbstripout.clean "python -m nbstripout"
+git config filter.nbstripout.smudge cat
+git config filter.nbstripout.required true
+```
+
 Run the tests:
 
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+## Test-set policy
+
+Analyses read Train EDFs only (`<subject>/<session>/Train/CBCol/*.edf`). The Test split (Static, Dyn,
+DynBigram) is held out for the final evaluation. Scripts check every EDF and cached processing record
+with `src/bigp3bci_data_policy.py`; `tests/test_data_policy.py` fails if code names a Test-split folder.
+Two earlier exceptions are recorded in `docs/experiment_log.md`: the raw-data inspection (notebook 01)
+read Test EDF headers and state channels to count characters, and a Static experiment read Test/Static
+data; its outputs were deleted. The history-amount and EA analyses were run after those results had
+been seen and are labelled exploratory.
+
+## Reproduction order
+
+```bash
+python scripts/run_causal_pilot.py                      # notebook 02
+python scripts/run_expanded_pilot.py                    # notebook 02; preprocessing cache used below
+python scripts/compare_epoch_policies.py                # notebook 05
+python scripts/refine_blink_boundaries.py               # notebook 04
+python scripts/run_bounded_prominence_secondary.py      # notebook 04
+python scripts/measure_local_plateau_excursions.py
+python scripts/run_all_studyf_preprocessing.py          # notebook 06 (main result, below)
+python scripts/run_swlda_rejection_experiment.py --config configs/swlda_all_studyf.json --output outputs/swlda_all_studyf_v3
+python scripts/run_swlda_calibration_budget.py          # notebook 07 (also adds weighted log-loss)
+python scripts/check_session_drift.py
+python scripts/run_history_amount_exploratory.py        # notebook 08
+python scripts/audit_history_amount_exploratory.py
+python scripts/run_ea_sensitivity.py                    # notebook 09
+```
+
+Each run writes a new directory under `outputs/` and records configuration and input hashes. Rebuild a
+report with its `build_*_notebook.py` script and execute it with the `bigp3bci` kernel.
 
 ## Reproducing the main result (all StudyF, v3)
 
@@ -58,23 +99,24 @@ python scripts/build_three_session_experiment_notebook.py --all-studyf
 python scripts/plot_swlda_all_studyf_accuracy.py
 ```
 
-Then execute `notebooks/10_swlda_comparison.ipynb` with the `bigp3bci` kernel.
+Then execute `notebooks/06_swlda_comparison.ipynb` with the `bigp3bci` kernel.
 `run_all_studyf_preprocessing.py` reuses cached per-EDF results and can be restarted after an interruption.
 
 ## Notebook index
 
-| Notebook | Topic | Script / config / output |
+| Notebook | Topic | Script / config |
 |---|---|---|
-| 00–04 | MNE tutorial, EDF inspection, raw inspection, artifact QC, continuous manual QC | interactive |
-| [05](notebooks/05_preprocessing.ipynb) | Preprocessing: expanded pilot, then original pilot | `build_expanded_pilot_notebook.py`, `build_causal_pilot_notebook.py` |
-| [06](notebooks/06_blink_review.ipynb) | Blink detection summary, candidate review, false positives, threshold validation | Original builders update their corresponding chapter |
-| 07 | Three epoch-policy comparison | `compare_epoch_policies.py`, `configs/three_policy_comparison.json` |
-| 08 | Blink main-wave / recovery localization | `refine_blink_boundaries.py`, `configs/blink_boundary_localization.json` |
-| 09 | Bounded-prominence secondary analysis | `run_bounded_prominence_secondary.py`, `configs/bounded_prominence_secondary.json` |
-| [10](notebooks/10_swlda_comparison.ipynb) | SWLDA: all StudyF (v3), six-subject coverage (v2), original pilot (v1) | `build_three_session_experiment_notebook.py --all-studyf`, without flag for v2; `build_swlda_experiment_notebook.py` for v1 |
-| [11](notebooks/11_swlda_calibration_budget.ipynb) | SWLDA calibration budgets: last-six SE003 Train validation, flash ROC-AUC | `build_swlda_budget_notebook.py`, `configs/swlda_calibration_budget.json` |
-| [12](notebooks/12_history_amount_exploratory.ipynb) | Exploratory historical-file amount H versus current budget k; subject small multiples and paired bootstrap | `run_history_amount_exploratory.py`, `configs/history_amount_exploratory.json` |
-| [13](notebooks/13_ea_sensitivity.ipynb) | Exploratory session-wise Euclidean alignment sensitivity (B-A, C-current only) with SWLDA | `run_ea_sensitivity.py`, `configs/ea_sensitivity.json` |
+| [01](notebooks/01_data_inventory.ipynb) | Data inventory and raw inspection, EDF inspection, artifact QC (no outputs) | interactive |
+| [02](notebooks/02_preprocessing.ipynb) | Preprocessing and candidate detection: expanded pilot, then causal pilot | `build_expanded_pilot_notebook.py`, `build_causal_pilot_notebook.py` |
+| [03](notebooks/03_blink_review.ipynb) | Blink detection summary, candidate review, false positives, threshold validation | builders update their own chapter |
+| [04](notebooks/04_blink_boundaries_secondary.ipynb) | Blink main-wave / recovery localization and bounded-prominence confirmation (no outputs) | `refine_blink_boundaries.py`, `run_bounded_prominence_secondary.py` |
+| [05](notebooks/05_epoch_policy_comparison.ipynb) | Three epoch policies A/B/C | `compare_epoch_policies.py`, `configs/three_policy_comparison.json` |
+| [06](notebooks/06_swlda_comparison.ipynb) | SWLDA main result (all StudyF, v3); v2 and v1 in the appendix | `build_three_session_experiment_notebook.py --all-studyf` |
+| [07](notebooks/07_swlda_calibration_budget.ipynb) | SWLDA calibration budget, last-six SE003 Train validation, flash ROC-AUC | `run_swlda_calibration_budget.py`, `configs/swlda_calibration_budget.json` |
+| [08](notebooks/08_history_amount_exploratory.ipynb) | Historical-file amount H versus current budget k (exploratory) | `run_history_amount_exploratory.py`, `configs/history_amount_exploratory.json` |
+| [09](notebooks/09_ea_sensitivity.ipynb) | Session-wise Euclidean alignment sensitivity (exploratory) | `run_ea_sensitivity.py`, `configs/ea_sensitivity.json` |
+| 10 | EEGNet (planned) | `docs/eegnet_protocol.md` |
+| [A1](notebooks/A1_continuous_eeg_manual_qc.ipynb) | Appendix: continuous EEG manual QC record | interactive (Qt) |
 
 Related reports share one notebook, with the latest coverage first and historical experiments in separate chapters. Original builders update only their own chapter and retain other chapters and saved outputs. Restart the kernel before running a selected chapter from its initialization cell; interactive review chapters retain their original instructions. Rebuilding a chapter clears that chapter's execution outputs until it is executed again. Data scopes and detector versions remain separate.
 
@@ -82,7 +124,7 @@ Related reports share one notebook, with the latest coverage first and historica
 
 ## Experiment log
 
-### Causal preprocessing pilot (notebook 05)
+### Causal preprocessing pilot (notebook 02)
 
 新增预处理 pilot 可通过以下命令重复运行（项目已有 `bigp3bci` conda 环境）：
 
@@ -91,11 +133,11 @@ python scripts/run_causal_pilot.py
 python -m unittest discover -s tests -v
 ```
 
-统一配置为 `configs/causal_pilot.json`，实现位于 `src/bigp3bci_preprocessing.py`。CLI 支持 `--config`、`--data-root`、`--output`。默认按稳定排序为 F_05 / F_03 各选择一份 Train/CBCol EDF；Duke/ETSU 映射沿用 notebook 02 的推断，未提升为已证实的站点事实。处理函数也可用于其他 EDF，不进行训练或阈值拟合；正式测试配置须在验证与 calibration budget 确定后单独冻结。
+统一配置为 `configs/causal_pilot.json`，实现位于 `src/bigp3bci_preprocessing.py`。CLI 支持 `--config`、`--data-root`、`--output`。默认按稳定排序为 F_05 / F_03 各选择一份 Train/CBCol EDF；Duke/ETSU 映射沿用 notebook 01 的推断，未提升为已证实的站点事实。处理函数也可用于其他 EDF，不进行训练或阈值拟合；正式测试配置须在验证与 calibration budget 确定后单独冻结。
 
 仅处理已核对的 16 个 EEG 通道；依次执行 60 Hz notch（Q=30，二阶）与 Butterworth 0.5–30 Hz bandpass（原型四阶，带通总八阶），使用 SOS 因果实现。选择依据为平坦通带与适中的工程复杂度；这些均是可调整候选，**不代表精确复现 BCI2000**。每份 EDF 以首个样本对应的稳态初始化，按 1 秒块保留内部状态；不跨 EDF 传递状态。初始 10 秒为保守开发启动保护区，涉及 epoch 无效，尚非已验证的最短稳定时间。采集滤波字符串按 EDF 原始 header 逐通道保存，与新增滤波分开。输出前后校验源文件 SHA256。事件通道不被滤波，事件不移动，采样率及连续样本数不变。
 
-Epoch 使用 `[onset, onset + ceil(0.8*sfreq))` 半开样本区间；256 Hz 时为 205 点，最后一点 796.875 ms。在线等待 onset 后完整 800 ms，再使用该时点已完成的连续 QC 窗口；重叠允许，末尾不足仍保留并标记。Baseline=None。复用 `stimulus_begin_events`：StimulusType=0 为 non-target，1 为 target。按 notebook 02 的 SelectedTarget 上升沿结束 trial；缺边界事件保留 trial=-1，不能根据目标字符值猜测边界。
+Epoch 使用 `[onset, onset + ceil(0.8*sfreq))` 半开样本区间；256 Hz 时为 205 点，最后一点 796.875 ms。在线等待 onset 后完整 800 ms，再使用该时点已完成的连续 QC 窗口；重叠允许，末尾不足仍保留并标记。Baseline=None。复用 `stimulus_begin_events`：StimulusType=0 为 non-target，1 为 target。按 notebook 01 的 SelectedTarget 上升沿结束 trial；缺边界事件保留 trial=-1，不能根据目标字符值猜测边界。
 
 连续 QC 采用固定阈值的 2 秒窗口、1 秒步长，尾部附加一个截至文件末尾的窗口，不按整份 EDF 分布估阈值。检查原始非有限、全零、常值、低 PTP/STD、绝对大幅与大波动；保存每窗可用样本、历史异常占比、平线比例和持续异常候选理由。连续平线检测的时间尺度为窗口长度，短于窗口的孤立平线可能漏检。持续候选使用至少 10 秒历史及 20% 异常窗口比率；此规则也是开发候选。窗口级与 epoch 级严重平线标记均保留。非有限输入仅为防止递归滤波永久污染而以前一有限输入维持状态；对应点及后续 10 秒恢复区无效。
 
@@ -115,7 +157,7 @@ PTP 在滤波后以 V 计算，配置与表格为 µV。三个候选上下限为
 
 ## SWLDA epoch rejection comparison (Train development only)
 
-Run `python scripts/run_swlda_rejection_experiment.py` from the repository root. Configuration: `configs/swlda_rejection_experiment.json`. In restricted Windows environments, set `$env:_MNE_FAKE_HOME_DIR=$PWD.Path` before running. View the fully executed `notebooks/10_swlda_comparison.ipynb` for figures and step-by-step explanations. The notebook builder is `scripts/build_swlda_experiment_notebook.py`; rebuilding creates an unexecuted notebook.
+Run `python scripts/run_swlda_rejection_experiment.py` from the repository root. Configuration: `configs/swlda_rejection_experiment.json`. In restricted Windows environments, set `$env:_MNE_FAKE_HOME_DIR=$PWD.Path` before running. View the fully executed `notebooks/06_swlda_comparison.ipynb` for figures and step-by-step explanations. The notebook builder is `scripts/build_swlda_experiment_notebook.py`; rebuilding creates an unexecuted notebook.
 
 The comparison uses 12 existing Train EDFs from 6 subjects, grouped into 11 subject/session models per policy: 48 complete calibration characters and the same 24 chronological validation characters. Final Test EDFs are excluded. Source and configuration hashes, fixed split manifests, mapping checks, 256-feature definitions, selected features, SWLDA models, missing scores for rejected flashes, character predictions, per-stimulus counts, AUC and paired comparisons are saved under `outputs/swlda_rejection_experiment_v1/`.
 
@@ -140,7 +182,7 @@ python scripts/audit_swlda_saved_experiment.py outputs/swlda_three_sessions_v2
 python scripts/build_three_session_experiment_notebook.py
 ```
 
-Then execute `notebooks/10_swlda_comparison.ipynb`. Outputs are separate from v1. The combined six-subject figure shows the mean and sample SD over all three Sessions; character denominators and no-output counts remain visible in tables. Independent EDFs use separate sample clocks and filter state, so cross-file elapsed time is not fabricated. Expanded coverage also increases the per-Session calibration budget relative to the small pilot; differences from v1 cannot be attributed to coverage alone.
+Then execute `notebooks/06_swlda_comparison.ipynb`. Outputs are separate from v1. The combined six-subject figure shows the mean and sample SD over all three Sessions; character denominators and no-output counts remain visible in tables. Independent EDFs use separate sample clocks and filter state, so cross-file elapsed time is not fabricated. Expanded coverage also increases the per-Session calibration budget relative to the small pilot; differences from v1 cannot be attributed to coverage alone.
 <!-- /full-three-session-experiment -->
 
 
@@ -156,7 +198,7 @@ python scripts/audit_swlda_saved_experiment.py outputs/swlda_all_studyf_v3
 python scripts/build_three_session_experiment_notebook.py --all-studyf
 ```
 
-Execute `notebooks/10_swlda_comparison.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
+Execute `notebooks/06_swlda_comparison.ipynb` for the full report and combined ten-subject error-bar plot (three Session means +/- sample SD). Detailed scores, selected features, models, fixed character splits, subject/Session results and paired comparisons live in `outputs/swlda_all_studyf_v3`. These remain development results, without detector retuning or final Test evaluation.
 <!-- /all-studyf-experiment -->
 
 ## SWLDA calibration budgets with Train holdout validation
@@ -170,7 +212,7 @@ Configuration: `configs/swlda_calibration_budget.json`. Output:
 preserved; use a new `--output` directory for a rerun. A short check can use
 `--subjects F_05 --k-values 0 1 12 --output outputs/<new-name>`.
 
-View the executed [notebook 11](notebooks/11_swlda_calibration_budget.ipynb).
+View the executed [notebook 07](notebooks/07_swlda_calibration_budget.ipynb).
 Rebuild with `python scripts/build_swlda_budget_notebook.py`; its cells only
 read saved results, without training.
 
@@ -228,7 +270,7 @@ python scripts/build_history_amount_notebook.py
 ```
 
 Outputs are in `outputs/history_amount_exploratory_v1/`. The run checkpoints each
-model and resumes with unchanged configuration and input hashes. Notebook 12
+model and resumes with unchanged configuration and input hashes. Notebook 08
 shows shared-axis 2-by-5 subject panels followed by a macro panel, all subset
 points, same-k current-only references, and 10,000-replicate subject-bootstrap
 intervals. Tables include per-subject subset means, paired differences from
@@ -247,7 +289,7 @@ validation characters or Test), with fixed shrinkage 0.001. EA is applied after
 preprocessing and before the 16x16 window features; because window means commute
 with channel-space linear maps it is applied to cached features, verified against
 raw epochs. Only k=3, 6, 12 are reported (k=0 has no S3 data for R). Conditions:
-A (history+current, no EA; reproduces notebook 12 H=6), B (history+current, EA),
+A (history+current, no EA; reproduces notebook 08 H=6), B (history+current, EA),
 current only, and C (current only, EA).
 
 ```powershell
@@ -277,3 +319,56 @@ does not establish equivalence or absence of association. F_05 has candidate
 overlap in 685/756 target and 3,470/6,048 non-target flashes; F_25 has 275/756 and
 2,109/6,048, respectively. These are engineering candidates rather than confirmed
 blinks, and this descriptive analysis does not change the preprocessing policy.
+
+## Reference
+
+### Scripts not covered above
+
+| Script | Purpose |
+|---|---|
+| `run_expanded_pilot.py` | Expanded Train pilot; writes `outputs/expanded_pilot`, part of the preprocessing input manifest |
+| `check_session_drift.py` | Session covariance and amplitude drift (`configs/session_drift_descriptive.json`), used to choose EA subjects |
+| `measure_local_plateau_excursions.py` | Local plateau metrics (`configs/local_plateau_metrics.json`) |
+| `audit_history_amount_exploratory.py` | Independent audit of the history-amount analysis, shown in notebook 08 |
+| `audit_studyf_abc_strategies.py` | Independent audit of the v3 A/B/C experiment |
+| `plot_swlda_calibration_budget.py` | Redraw notebook 07 figures from saved CSVs without refitting |
+| `build_double_blind_review.py`, `score_double_blind_review.py` | Double-blind blink review: anonymous packets and comparison of two independent forms |
+| `export_blink_candidates.py`, `export_unmatched_blink_context.py` | Export candidate annotations and unmatched-candidate context for manual review |
+| `audit_main_false_positive_reviews.py` | Audit saved main-wave false-positive reviews |
+
+### Modules (`src/bigp3bci_*.py`)
+
+| Purpose | Modules |
+|---|---|
+| Data access | `data_policy` |
+| Preprocessing and QC | `preprocessing`, `continuous_qc`, `policy_comparison` |
+| Blink detection and review | `expanded_pilot`, `candidate_review`, `blink_boundaries`, `boundary_review`, `blind_review`, `bounded_prominence`, `plateau_metrics` |
+| SWLDA and evaluation | `swlda`, `probability`, `flash_early_stopping` |
+| Exploratory analyses | `calibration_budget`, `history_amount`, `euclidean_alignment` |
+| Figures | `budget_plot`, `figure_style` |
+
+### Configurations
+
+| Config | Entry script | Output |
+|---|---|---|
+| `causal_pilot.json` | `run_causal_pilot.py` | `outputs/causal_pilot` |
+| `expanded_pilot.json` | `run_expanded_pilot.py` | `outputs/expanded_pilot` |
+| `three_policy_comparison.json` | `compare_epoch_policies.py` | `outputs/three_policy_comparison` |
+| `blink_boundary_localization.json` | `refine_blink_boundaries.py` | `outputs/blink_boundary_localization_v1` |
+| `bounded_prominence_secondary.json` | `run_bounded_prominence_secondary.py` | `outputs/bounded_prominence_secondary_v1` |
+| `local_plateau_metrics.json` | `measure_local_plateau_excursions.py` | `outputs/local_plateau_metrics_v1` |
+| `swlda_rejection_experiment.json` | `run_swlda_rejection_experiment.py` | `outputs/swlda_rejection_experiment_v1` |
+| `swlda_three_sessions.json` | read by notebook 06 builder | `outputs/swlda_three_sessions_v2` |
+| `swlda_all_studyf.json` | read by notebook 06 builder | `outputs/swlda_all_studyf_v3` |
+| `swlda_calibration_budget.json` | `run_swlda_calibration_budget.py` | `outputs/swlda_calibration_budget_train_validation_v1` |
+| `session_drift_descriptive.json` | `check_session_drift.py` | `outputs/session_drift_descriptive_v1` |
+| `history_amount_exploratory.json` | `run_history_amount_exploratory.py` | `outputs/history_amount_exploratory_v1` |
+| `ea_sensitivity.json` | `run_ea_sensitivity.py` | `outputs/ea_sensitivity_v1` |
+
+### Documents
+
+- `docs/history_amount_exploratory_protocol.md`, `docs/ea_sensitivity_protocol.md`: rules fixed before each exploratory run.
+- `docs/eegnet_protocol.md`: EEGNet rules; open items are filled in before the first training run.
+- `docs/blink_detector_freeze.md`: frozen detector version, parameters and development files.
+- `docs/experiment_log.md`: date, commit and Test access of every run.
+- `docs/reorganization_checklist.md`: repository reorganization plan.

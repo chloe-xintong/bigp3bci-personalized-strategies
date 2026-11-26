@@ -49,7 +49,7 @@ def plot_budget_results(overall,path,k_values,metric='macro_flash_roc_auc'):
     logloss=metric=='macro_weighted_log_loss'
     scale=1 if auc or logloss else 100
     full_limits=(0,1.02) if auc else ((0,max(1.,float(overall[metric].max())*1.08)) if logloss else (0,102))
-    cluster=overall.loc[~overall.scheme.eq('current_only'),metric].dropna()*scale
+    cluster=overall.loc[overall.scheme.isin(list(SCHEMES)),metric].dropna()*scale
     lower,upper=float(cluster.min()),float(cluster.max())
     step=.01 if auc or logloss else 5.
     padding=max(.005 if auc or logloss else 1.,(upper-lower)*.1)
@@ -68,7 +68,7 @@ def plot_budget_results(overall,path,k_values,metric='macro_flash_roc_auc'):
            ylabel='Validation flash ROC-AUC (subject macro mean)' if auc else ('Class-balanced flash log-loss (lower is better)' if logloss else 'Train holdout character accuracy (%)'),
            ylim=full_limits if i==0 else zoom_limits,xticks=k_values)
         label_references(ax,[(y,t) for y,t in items if ax.get_ylim()[0]<=y<=ax.get_ylim()[1]])
-        ax.set_title('Full-range overview' if i==0 else f'Zoomed comparison ({outside} points outside range; see left)',fontsize=11)
+        ax.set_title('Full-range overview' if i==0 else 'Expanded comparison (all curves retained)',fontsize=11)
         ax.grid(axis='y',alpha=.25)
     _legend(fig,band=False)
     fig.savefig(path,dpi=150);plt.close(fig)

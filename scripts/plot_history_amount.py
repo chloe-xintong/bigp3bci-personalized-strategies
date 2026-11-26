@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[1]
 import sys
 sys.path.insert(0,str(ROOT/'src'))
 # k=0 is history only (a different scheme): black. k=3/6/12: one ordered purple
-# ramp, kept apart from the blue/orange/green scheme colors used in notebook 11.
+# ramp, kept apart from the blue/orange/green scheme colors used in notebook 07.
 from bigp3bci_figure_style import (K_COLORS as COLORS,K_MARKERS as MARKERS,K_REFERENCE as REFERENCE,
                                    K_BAND_COLORS as BAND_COLORS,AUC_LIMITS,BAND_ALPHA,label_references)
 CEILING_AUC=.95

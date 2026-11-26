@@ -7,6 +7,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 os.environ.setdefault('_MNE_FAKE_HOME_DIR',str(ROOT))
 sys.path.insert(0,str(ROOT/'src'))
+from bigp3bci_data_policy import require_train_edf,require_train_record
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -150,7 +151,7 @@ def main():
     results=[]
     for i,r in manifest.iterrows():
         path=args.data_root/r.relative_path
-        if path.parts[-3]!='Train':raise ValueError('Only training files authorized')
+        require_train_edf(path)
         print(f'[{i+1}/{len(manifest)}] {path.name} ({r.site}, inferred)',flush=True)
         result=process_expanded_file(path,r.site,cfg,out/path.stem,ROOT)
         results.append(result)

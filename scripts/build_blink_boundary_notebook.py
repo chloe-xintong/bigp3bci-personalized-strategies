@@ -2,6 +2,7 @@
 from pathlib import Path
 import textwrap
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
 cells=[]
 def md(s):cells.append(nb.v4.new_markdown_cell(textwrap.dedent(s).strip()))
@@ -221,4 +222,4 @@ assert summary.total.eq(9054).all()
 print('PASS: frozen triggers and old results preserved; domains and decision availability explicit; old overlap count reproduced')
 ''')
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/08_bigp3bci_blink_main_recovery_localization.ipynb';nb.write(n,p);print(p)
+p=ROOT/'notebooks/08_bigp3bci_blink_main_recovery_localization.ipynb';print(write_report(n,p))

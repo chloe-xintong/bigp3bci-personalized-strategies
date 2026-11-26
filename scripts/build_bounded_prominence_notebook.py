@@ -1,6 +1,7 @@
 ﻿"""Notebook for bounded local-prominence secondary confirmation, development only."""
 from pathlib import Path
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
 md=nb.v4.new_markdown_cell;code=nb.v4.new_code_cell
 cells=[md('''# 09 · 有限观察范围的局部突出度二次确认
@@ -144,4 +145,4 @@ assert negative_files.groupby('threshold_uv').marked_candidates.sum().eq(19).all
 print('逐组人工对照已完成；未修改11号窗口、旧触发参数或实际删除数据。')
 ''')])
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/09_bigp3bci_bounded_prominence_secondary.ipynb';nb.write(n,p);print(p)
+p=ROOT/'notebooks/09_bigp3bci_bounded_prominence_secondary.ipynb';print(write_report(n,p))
