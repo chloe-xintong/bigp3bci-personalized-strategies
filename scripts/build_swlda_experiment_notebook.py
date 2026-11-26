@@ -1,6 +1,7 @@
 """Build the executed SWLDA A/B/C development experiment report notebook."""
 from pathlib import Path
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
 md=nb.v4.new_markdown_cell;code=nb.v4.new_code_cell
 cells=[md('''# 14 · SWLDA：三种epoch拒绝策略的字符识别对照
@@ -236,4 +237,4 @@ assert subject_results.groupby('policy').correct_characters.sum().to_dict()==ove
 print('PASS: individual tables reconcile with all 33 models and the overall 24-character comparison')
 ''')]
 n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/14_bigp3bci_swlda_rejection_experiment.ipynb';nb.write(n,p);print(p)
+p=ROOT/'notebooks/14_bigp3bci_swlda_rejection_experiment.ipynb';write_report(n,p);print(p)

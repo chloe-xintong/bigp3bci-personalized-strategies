@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from bigp3bci_preprocessing import file_hash
+from bigp3bci_data_policy import require_train_edf,require_train_record
 from bigp3bci_continuous_qc import read_bigp3bci_edf
 from bigp3bci_swlda import fit_swlda,score_swlda,window_features,auc_rank,decode_character
 OUT=ROOT/'outputs/swlda_rejection_experiment_v1'
@@ -38,7 +39,7 @@ def prepare(cfg):
    if file_hash(folder/source_file)!=expected:raise ValueError('Preprocessing provenance changed: '+str(folder/source_file))
   group_dictionaries.append(pd.read_csv(folder/'stimulus_group_dictionary.csv').assign(edf_name=item.edf_name))
   path=Path(rec['source_edf'])
-  if path.parts[-3]!='Train':raise ValueError('No final Test EDFs permitted')
+  require_train_edf(path)
   if rec['channels']!=cfg['features']['channels']:raise ValueError('Different channel order')
   source_before=file_hash(path)
   e=pd.read_csv(folder/'epoch_candidates.csv')

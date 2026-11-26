@@ -1,56 +1,9 @@
-﻿"""Build explanatory expanded notebook and append current-results section to 05."""
+﻿"""Build the expanded preprocessing chapter in the consolidated report."""
 from pathlib import Path
 import textwrap
 import nbformat as nb
+from notebook_reports import write_report
 ROOT=Path(__file__).resolve().parents[1]
-
-def expanded_overview_cells():
-    def markdown(s):return nb.v4.new_markdown_cell(textwrap.dedent(s).strip(),metadata={'expanded_pilot_appendix':True})
-    def code(s):return nb.v4.new_code_cell(textwrap.dedent(s).strip(),metadata={'expanded_pilot_appendix':True})
-    return [markdown('''
-## 13. 扩展训练 pilot：4 被试 × 2 Session（当前版本）
-
-前面 1–12 节是最初两份 EDF 的历史 pilot。**本节及 [07 扩展结果逐步核查](07_bigp3bci_expanded_candidate_pilot.ipynb) 对应当前新实现**，读取 `outputs/expanded_pilot`，不覆盖早期产物。
-
-实现：`src/bigp3bci_expanded_pilot.py`；运行：`scripts/run_expanded_pilot.py`；参数：`configs/expanded_pilot.json`。眨眼独立标记为 CANDIDATE_blink，不决定有效性；150/250/350 µV 与无上限方案只模拟，不自动删 epoch。原始16通道、状态和事件样本均保留，baseline=None。
-'''),code('''
-from pathlib import Path
-import json
-import pandas as pd
-from IPython.display import display, Image
-EXP_ROOT=next(p for p in [Path.cwd(),*Path.cwd().parents] if (p/'configs/expanded_pilot.json').exists())
-EXP_OUT=EXP_ROOT/'outputs/expanded_pilot'
-display(pd.read_csv(EXP_OUT/'selection_manifest.csv'))
-display(pd.read_csv(EXP_OUT/'event_audit.csv')[['edf_name','stimulus_type_unique','flash_count','n_character_boundaries','helper_onsets_match','helper_exact_label_mismatch']])
-'''),markdown('''
-**事件核查解读：**原始 StimulusType=0/1，与显示事件码1/2不是同一编码。126 不是强制标准；本轮 F_20 SE002 首字符实际108次，全文件738次。完整字符边界、数字原值计数及onset前后状态见07与每份EDF核查CSV。站点映射仍为 inferred。
-
-下图跨文件比较逐通道PTP（箱体为25–75%范围，须线使用matplotlib默认1.5 IQR；隐藏离群点只为可读性，完整值均保留）。文件索引对应上表1–8。
-'''),code("display(Image(filename=str(EXP_OUT/'figures/ptp_by_file_channel.png'),width=1250))"),markdown('''
-眨眼检测使用独立因果5 Hz低通分支，结合额部共同变化、双极性、持续时间和恢复；后部幅值比作支持指标，不把Fz大峰直接当眨眼。decision_seconds 是观察恢复及合并等待之后的可用时间，不能用回溯起点代替。
-
-候选数的个体差异不代表真实眨眼率差异，参数尚未验证。
-'''),code('''
-e= pd.read_csv(EXP_OUT/'all_events.csv')
-b= pd.read_csv(EXP_OUT/'all_blinks.csv')
-manifest=pd.read_csv(EXP_OUT/'selection_manifest.csv')
-counts=manifest[['edf_name','site','site_status']].merge(b.groupby('edf_name').size().rename('blink_candidates'),on='edf_name',how='left').fillna({'blink_candidates':0})
-display(counts)
-display(pd.read_csv(EXP_OUT/'simulation_edf_summary.csv').query("scheme.str.startswith('all16')",engine='python'))
-display(pd.read_csv(EXP_OUT/'manual_validation_status.csv')[['edf_name','suspected_manual_blinks','complete_reviewed_intervals','reviewed_event_recall','validation_status']])
-'''),markdown('''
-**证据边界：**当前人工文件有51段疑似眨眼，但缺少完整 reviewed_intervals，因此重叠与边界差异只作描述，不能计算漏检率/误报率，也不代表关联epoch必须拒绝。`filter_startup` 始终与眨眼候选分开。
-
-详细候选波形、基础质量、刺激组计数、延迟以及模拟方案说明见07；所有scheme的基础条件相同，no_upper只移除PTP上限，仍保留启动/不完整/非有限/原始平线与低PTP条件。
-''')]
-
-
-def append_to_05():
-    p=ROOT/'notebooks/05_bigp3bci_causal_preprocessing_pilot.ipynb'
-    n=nb.read(p,as_version=4)
-    n.cells=[c for c in n.cells if not c.metadata.get('expanded_pilot_appendix')]
-    n.cells.extend(expanded_overview_cells());nb.write(n,p)
-
 
 def main():
     cells=[]
@@ -295,7 +248,7 @@ for _,r in manifest.iterrows():
 display(pd.DataFrame(checks))
 ''')
     n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-    path=ROOT/'notebooks/07_bigp3bci_expanded_candidate_pilot.ipynb';nb.write(n,path)
-    append_to_05();print(path)
+    path=ROOT/'notebooks/07_bigp3bci_expanded_candidate_pilot.ipynb';write_report(n,path)
+    print(path)
 
 if __name__=='__main__':main()

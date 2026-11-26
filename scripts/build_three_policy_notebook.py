@@ -7,15 +7,15 @@ cells=[]
 def md(s):cells.append(nb.v4.new_markdown_cell(textwrap.dedent(s).strip()))
 def code(s):cells.append(nb.v4.new_code_cell(textwrap.dedent(s).strip()))
 md('''
-# 10 · 固定检测参数后的三种epoch处理策略
+# 05 · 固定检测参数下的三种 epoch 处理策略
 
-固定正式滤波、辅助眨眼检测参数及输入数据，在当前12份已处理训练EDF上比较：
+正式滤波、眨眼检测参数和输入数据固定，在 12 份已处理的训练 EDF 上比较：
 
-1. **faults_only**：保留眨眼相关epoch，仅排除明确故障和共同技术有效性条件。
-2. **ptp_250uv**：在同一基础上，任意一个指定EEG通道PTP>250µV则拒绝；150µV另列为预先已有的敏感性对照。
-3. **blink_overlap**：在同一基础上，拒绝与现有CANDIDATE_blink有任意正样本重叠的epoch。
+1. **faults_only**：保留眨眼相关 epoch，只排除明确故障和共同的技术有效性条件。
+2. **ptp_250uv**：在同一基础上，任一 EEG 通道 PTP>250µV 时拒绝；150µV 作为敏感性对照。
+3. **blink_overlap**：在同一基础上，拒绝与 CANDIDATE_blink 有任意样本重叠的 epoch。
 
-本轮是处理策略模拟，不是真正删除数据，也不代表默认启用眨眼拒绝。所有事件、16通道指标、原因、触发通道和时序都保留。没有训练分类器，不用标签决定epoch是否保留，不按结果选择参数。
+这是处理策略的模拟：所有事件、16 通道指标、拒绝原因、触发通道和时序都保留，不删除数据。保留与否不使用标签，本步不训练分类器。
 ''')
 code('''
 from pathlib import Path
@@ -34,13 +34,13 @@ PRIMARY=['faults_only','ptp_250uv','blink_overlap']
 display(pd.Series(record,name='comparison record').to_frame())
 ''')
 md('''
-## 1. 哪些基础条件共用，哪些只是候选？
+## 1. 共用的基础条件
 
-三种策略都排除：不完整窗口、滤波启动期、原始/滤波非有限值、非有限值后的滤波恢复区、已经达到持续时间条件的原始恒定或全零片段。原始恒定/全零的关联标记必须在epoch决定时已经可知，仍使用原配置的0.25秒条件。
+三种策略都排除：不完整窗口、滤波启动期、原始或滤波后的非有限值、非有限值之后的滤波恢复区，以及达到持续时间条件（0.25 秒）的原始恒定或全零片段。恒定/全零标记在 epoch 判定时已经可知。
 
-**没有把跳变或低变化候选直接当成已确认故障**，也不自动删持续异常通道；不增加重参考或插值。第一种策略没有PTP上限，也没有PTP下限拒绝；否则“只排故障”会混入待验证幅值门槛。原始近乎平线标记继续保存用于复核，只有精确恒定/全零按上述规则排除。
+跳变和低变化候选、持续异常通道只作标记，不作为排除条件；不做重参考或插值。faults_only 没有 PTP 上下限。近乎平线的原始片段保存下来供复核，只有精确恒定或全零按上述规则排除。
 
-每份EDF仍单独初始化并连续因果处理，0–800ms为[onset,onset+ceil(0.8×fs))，baseline=None。所有策略共用同一批epoch，因此差异只来自新增的PTP上限或眨眼重叠条件。
+每份 EDF 单独初始化并连续因果处理，epoch 为 [onset, onset+ceil(0.8×fs))，baseline=None。三种策略使用同一批 epoch，差异只来自 PTP 上限或眨眼重叠条件。
 ''')
 code('''
 display(pd.Series(config,name='fixed comparison settings').to_frame())
@@ -49,20 +49,20 @@ reasons=pd.read_csv(OUT/'rejection_reasons.csv')
 display(reasons[reasons.strategy.eq('faults_only')])
 ''')
 md('''
-## 2. 数据范围：原8文件和补充4文件分开
+## 2. 数据范围
 
-8份固定pilot按原预定规则选出；另外4份因用户保存人工标注而补充处理，不是独立盲测。所有文件均为训练数据。整体统计同时保留cohort分层，站点仍为inferred；文件数或epoch数不能当作独立被试数。
+8 份文件按预定规则选出；另外 4 份因有人工标注而补充处理。全部为训练数据。统计按 cohort 分层，站点为推断值。
 ''')
 code('''
 display(manifest.reset_index(names='zero_based_index'))
 display(pd.read_csv(OUT/'cohort_summary.csv'))
 ''')
 md('''
-## 3. 全体保留率与额外拒绝代价
+## 3. 保留率与额外拒绝
 
-共同排除264个epoch，本轮均来自各EDF前10秒启动保护。未在这批数据中发现会额外触发第一种策略的非有限、精确恒定/全零等故障；这不表示以后可以取消故障检查。
+共同排除 264 个 epoch，全部来自各 EDF 前 10 秒的启动保护。这批数据中没有非有限、精确恒定或全零等额外故障。
 
-250µV方案与基础方案相同：没有epoch在基础条件通过后超过该上限。150µV是较严格敏感性方案，不作为自动选择的新阈值。眨眼重叠策略会剔除大量额外epoch，不能因为检测器与已标眨眼重叠较好，就推导这些epoch必须删除。
+250µV 方案与基础方案结果相同：通过基础条件的 epoch 都没有超过该上限。150µV 是更严格的敏感性方案。眨眼重叠策略额外拒绝了大量 epoch。
 ''')
 code('''
 display(overall)
@@ -74,9 +74,9 @@ display(comparison[['strategy','expected_kept','expected_retention','extra_rejec
 display(pd.read_csv(OUT/'additional_rejection_overlap.csv'))
 ''')
 md('''
-## 4. 各文件与被试/Session差异
+## 4. 各文件与被试、Session 的差异
 
-文件索引按manifest1–12。不能只看合并保留率；某个被试候选很多时，合并统计可能主要反映这个被试。即使两个策略保留率相近，也应对照实际拒绝集合。
+文件按 manifest 编号 1–12。候选较多的被试会主导合并保留率，所以同时给出逐文件结果和实际拒绝集合。
 ''')
 code('''
 s=pd.read_csv(OUT/'edf_summary.csv')
@@ -85,20 +85,20 @@ display(Image(filename=str(OUT/'retention_by_file.png'),width=1250))
 display(pd.read_csv(OUT/'subject_summary.csv'))
 ''')
 md('''
-## 5. target/non-target保留是否不同？
+## 5. target 与 non-target 的保留率
 
-标签仅用于这里的事后分组。任何保留率差异都不意味着使用标签做拒绝，也不单独证明策略有益或有害。P300分类效果需要后续按原验证划分训练/评估，本轮没有这一步。
+标签只用于这里的事后分组。分类效果在后续 SWLDA 实验（notebook 06）中按验证划分评估。
 ''')
 code('''
 label=events.groupby(['strategy','label']).agg(total=('would_keep','size'),kept=('would_keep','sum'),retention=('would_keep','mean')).reset_index()
 display(label)
 ''')
 md('''
-## 6. 字符及刺激集合剩余flash数
+## 6. 每个字符和刺激集合的剩余 flash 数
 
-不因一次拒绝删除整个字符。下面显示每种策略下每字符可用flash数的范围，再列F_05 SE003 Train04作例子。没有加入最小证据量、字符评分或动态停止规则；剩余非零不能等同于证据已经足够。
+拒绝以 epoch 为单位，字符整体保留。下面给出每种策略下每字符可用 flash 数的范围，并以 F_05 SE003 Train04 为例。本步不设最小证据量和动态停止规则。
 
-stimulus_group_id仍是实际同时亮起的字符状态集合签名，原始StimulusCode继续保留。不能把这些签名冒称固定行列组；很多集合只出现一次。
+stimulus_group_id 是实际同时亮起的字符集合签名，原始 StimulusCode 同时保留；很多集合只出现一次。
 ''')
 code('''
 characters=pd.read_csv(OUT/'character_summary.csv')
@@ -106,14 +106,12 @@ display(characters.groupby('strategy').expected_kept.agg(['count','min','median'
 display(characters[characters.edf_name.eq('F_05_SE003_CBCol_Train04.edf')])
 groups=pd.read_csv(OUT/'stimulus_group_summary.csv')
 display(groups[groups.edf_name.eq('F_05_SE003_CBCol_Train04.edf') & groups.strategy.eq('blink_overlap')].head(15))
-print('全部逐刺激集合计数：',OUT/'stimulus_group_summary.csv')
+print('全部逐刺激集合计数：',(OUT/'stimulus_group_summary.csv').relative_to(ROOT).as_posix())
 ''')
 md('''
-## 7. 触发通道与策略分歧
+## 7. 触发通道与拒绝原因
 
-PTP拒绝记录实际超上限通道；基础故障记录故障通道。眨眼重叠是独立事件关联，不应编造一个PTP触发通道；其supporting_channels可回查原候选表。
-
-候选被判为疑似误报不意味着整段对应epoch一定应该保留，同样，人工确认眨眼也不意味着该epoch一定需要拒绝。本轮先保留三种策略供后续性能对照。
+PTP 拒绝记录实际超过上限的通道，基础故障记录故障通道。眨眼重叠按事件关联记录，触发通道可在候选表的 supporting_channels 中查到。
 ''')
 code('''
 triggers=pd.read_csv(OUT/'trigger_channels.csv')
@@ -121,11 +119,11 @@ display(triggers.groupby(['strategy','channel'])['count'].sum().sort_values(asce
 display(pd.read_csv(OUT/'rejection_reasons.csv').groupby(['strategy','reason'])['count'].sum().to_frame())
 ''')
 md('''
-## 8. 在两份完整人工检查区间内，具体保留了什么？
+## 8. 两段完整人工复核区间内的保留情况
 
-只看完全落在人工确认区间内、且共同基础条件通过的epoch：F_05 SE003 Train04 0–35秒、F_08 SE003 Train03 1–50秒；不确定区间排除。人工原始眨眼相交用作描述性标签，不参与三种策略判定。
+只看完全落在人工复核区间内、且通过共同基础条件的 epoch：F_05 SE003 Train04 的 0–35 秒、F_08 SE003 Train03 的 1–50 秒。与人工眨眼是否相交作为描述性标签，不参与策略判定。
 
-“无人工眨眼重叠却被眨眼策略拒绝”**不能直接当作epoch级误报**：辅助因果分支的延迟、眨眼恢复尾波及边界差异，都可能令自动区间延伸到人工边界以外。反过来，即使每个人工事件都有候选重叠，自动策略也未必拒绝所有与人工原始边界相交的epoch。该表用于观察代价，不重新定义人工真值。
+自动候选区间常比人工边界更长：辅助因果分支有延迟，并包含眨眼的恢复尾波。因此会出现“与人工眨眼不相交、但被眨眼策略拒绝”的 epoch；反过来，与人工边界相交的 epoch 也不一定全部被拒绝。
 ''')
 code('''
 review=pd.read_csv(OUT/'reviewed_epoch_summary.csv')
@@ -133,35 +131,31 @@ display(review)
 print('overlaps_manual_blink=True：epoch与人工疑似眨眼时间段相交；False：完整检查区间内未相交。')
 ''')
 md('''
-## 9. 在线可用时间：眨眼重叠不能偷看未来
+## 9. 在线判定时间
 
-基础/PTP方案等完整0–800ms样本到齐后即可判定。眨眼候选需要观察恢复和合并等待；即使当前还没有候选，也不能立刻宣布“这个epoch不会与稍后确认的候选重叠”。
+基础和 PTP 方案在 0–800 ms 样本到齐后即可判定。眨眼候选需要等待恢复与合并，所以眨眼策略使用统一的确认窗口：epoch 样本终点 + 最大候选持续时间 1.2 秒 + max(恢复 0.08 秒, 合并 0.15 秒)，各项按整数样本向上取整；在 256 Hz 下额外等待约 1.355 秒。
 
-本轮为眨眼策略采用**统一保守确认窗口**：epoch样本终点 + 最大候选持续时间1.2秒 + max(恢复0.08秒,合并0.15秒)，各项按整数样本向上取整。256Hz下额外等待约1.355秒。它用于保证可重复的无未来信息对照，并非最短延迟或最终在线策略。
-
-would_keep是回顾性策略结果；policy_decision_seconds才是这套保守政策的输出时间。若文件末尾没有足够数据，pending_at_eof单独标记，不悄悄当作生理故障。本批epoch均有足够记录尾部，因此pending为0。
+would_keep 是策略结果，policy_decision_seconds 是判定时刻。文件末尾数据不足时标记为 pending_at_eof；本批 epoch 的 pending 数为 0。
 ''')
 code('''
 display(overall[['strategy','mean_extra_wait_seconds','pending_at_eof']])
 display(events.loc[events.strategy.eq('blink_overlap'),['edf_name','event_index','epoch_decision_seconds','policy_decision_seconds','additional_wait_seconds','decision_data_available']].head(8))
 ''')
 md('''
-## 10. 三种处理后的平均ERP（描述性）
+## 10. 三种处理后的平均 ERP
 
-同一正式因果信号、baseline=None；仅平均各方案保留的完整有限epoch。每条曲线标出参与平均的数量，各通道/类别共享坐标。这里按epoch合并12份EDF，并非每被试等权均值；被试构成、类别数和重叠epoch都会影响曲线。
-
-250µV与基础方案重合是因为本批没有额外拒绝。眨眼策略改变ERP形态不等于提高分类效果，也不证明其拒绝必要。不能根据曲线更“像P300”就选方案。
+同一正式因果信号，baseline=None，平均各方案保留的完整有限 epoch。每条曲线标出参与平均的数量，各通道和类别共享坐标。曲线按 epoch 合并 12 份 EDF，被试构成和类别数会影响形态。250µV 与基础方案的曲线重合，因为本批没有额外拒绝。
 ''')
 code('''
 display(pd.read_csv(OUT/'pooled_erp_counts.csv'))
 display(Image(filename=str(OUT/'pooled_erp.png'),width=1300))
 ''')
 md('''
-## 11. 一致性检查与可重复运行
+## 11. 一致性检查与复现
 
-运行：`scripts/compare_epoch_policies.py`；统一配置：`configs/three_policy_comparison.json`；候选检测参数哈希与原8文件清单均检查未变。
+运行：`python scripts/compare_epoch_policies.py`；配置：`configs/three_policy_comparison.json`。运行时检查眨眼检测参数哈希和原 8 文件清单。
 
-结果文件包含全部9054个epoch×每个方案，不覆盖原表。不存在分类分数，后续不合格flash应“不提供分数”，不能填0。13项回归测试覆盖故障条件一致、标签不参与、策略差异、等待与EOF等行为；下面继续检查保存产物的一致性。
+结果包含全部 9,054 个 epoch × 每种方案。被拒绝的 flash 在后续分类中不给分数。13 项回归测试覆盖故障条件、标签不参与、策略差异、等待时间与文件末尾等行为；下面检查保存结果的一致性。
 ''')
 code('''
 assert record['detector_parameters_unchanged'] and record['actual_epochs_removed']==0
@@ -176,6 +170,6 @@ assert events.loc[events.strategy.eq('blink_overlap'),'additional_wait_seconds']
 assert events.loc[events.strategy.eq('faults_only'),'additional_wait_seconds'].eq(0).all()
 print('PASS: all events preserved, common baseline identical, criteria nested, event samples unchanged, confirmation wait explicit')
 ''')
-n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'python3','display_name':'Python (bigp3bci)','language':'python'}})
-p=ROOT/'notebooks/10_bigp3bci_three_epoch_policy_comparison.ipynb'
+n=nb.v4.new_notebook(cells=cells,metadata={'kernelspec':{'name':'bigp3bci','display_name':'Python (bigp3bci)','language':'python'}})
+p=ROOT/'notebooks/05_epoch_policy_comparison.ipynb'
 nb.write(n,p);print(p)
