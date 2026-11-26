@@ -55,6 +55,11 @@ def assemble(target, sections, metadata):
         '\n\n各章节的数据范围、阈值版本和历史输出独立，不能合并为同一个实验。'
         '重新运行时请重启 kernel，从所需章节的初始化单元开始；人工交互章节按原说明操作。'
         '\n\n更新：运行原报告 builder 会直接更新对应章节，保留其他章节的结果。')]
+    if target == '06_blink_review.ipynb':
+        from blink_single_review_cells import single_review_cells
+        from blink_duration_report_cells import duration_report_cells
+        cells.extend(single_review_cells())
+        cells.extend(duration_report_cells())
     for i, source in enumerate(sources):
         if source not in sections:
             continue
