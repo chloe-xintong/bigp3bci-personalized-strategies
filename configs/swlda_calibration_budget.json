@@ -1,0 +1,23 @@
+{
+  "experiment": "swlda_calibration_budget_train_validation_v1",
+  "source_experiment": "outputs/swlda_all_studyf_v3",
+  "history_sessions": ["SE001", "SE002"],
+  "current_session": "SE003",
+  "k_values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+  "policy": "A",
+  "channel_policy": "All 16 predefined channels; no data-driven channel selection",
+  "curves": ["current_only", "history_plus_current", "history_se001_plus_current", "history_se002_plus_current"],
+  "endpoints": ["history_only", "history_se001_only", "history_se002_only", "current_max_endpoint", "all_available_reference"],
+  "current_split": "SE003 Train chronological first 12 characters are calibration; last 6 characters are fixed validation",
+  "validation_source": "SE003/Train/last6_characters",
+  "primary_metric": "macro_subject_flash_roc_auc",
+  "additional_metric": "macro_subject_class_balanced_flash_log_loss",
+  "probability_calibration": "Training-only character-grouped 3-fold OOF Platt sigmoid; in-sample fallback for one training character; fixed slope L2=0.001",
+  "auxiliary_metric": "character_accuracy",
+  "history_scope": "All Train characters in SE001 and SE002, including their former within-session validation partitions",
+  "reference_scope": "All historical characters plus all 12 current calibration characters; never the six validation characters",
+  "reference_interpretation": "Data-rich reference, not a guaranteed mathematical upper bound; unfair versus smaller k because it uses more current characters",
+  "current_k0": "No current-only model can be fitted; record unavailable rather than using history or counting it as a measured zero accuracy",
+  "test_policy": "No Test EDFs are opened. The previous Static experiment was discarded at user request",
+  "development_limit": "Development validation only. Flash epochs overlap and cluster within characters; flash counts do not imply independent observations. Predeclare EEGNet checkpoint selection as maximizing flash ROC-AUC or minimizing class-balanced flash log-loss, never character accuracy"
+}
