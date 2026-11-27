@@ -54,6 +54,13 @@ class CrossSubjectSplitTests(unittest.TestCase):
         checks=pd.read_csv(path);self.assertEqual(len(checks),30);self.assertTrue(checks.passed.all())
         for col in ['auc_difference','accuracy_difference','max_flash_score_difference']:
             self.assertTrue(checks[col].abs().le(1e-10).all())
+        actual=pd.read_csv(path.parent/'control_results.csv')
+        ref=pd.read_csv(ROOT/self.cfg['control_experiment']/'subject_results.csv')
+        ref=ref[ref.scheme.eq('current_only')&ref.k.isin([3,6,12])]
+        joined=actual.merge(ref,on=['subject_id','k'],validate='one_to_one',suffixes=('_actual','_reference'))
+        self.assertEqual(len(joined),30)
+        for metric in ['flash_roc_auc','accuracy']:
+            assert_control_equal(joined[metric+'_actual'],joined[metric+'_reference'])
 
     def test_bootstrap_requires_all_subjects(self):
         idx=np.random.default_rng(0).integers(0,10,size=(10000,10))

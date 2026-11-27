@@ -19,3 +19,12 @@
 | 2026-11-26 | Session 漂移描述 | `check_session_drift.py` | `outputs/session_drift_descriptive_v1` | `03ff479` | 否 |
 | 2026-11-26 | 历史数据量（探索性） | `run_history_amount_exploratory.py` | `outputs/history_amount_exploratory_v1` | `03ff479` | 否 |
 | 2026-11-26 | EA 敏感性 | `run_ea_sensitivity.py` | `outputs/ea_sensitivity_v1` | `0ceb52f` | 否 |
+| 2026-11-26 | 跨被试 SWLDA（留一被试，探索性，附加分析） | `run_cross_subject_swlda.py --stage controls`，随后 `--stage cross` | `outputs/cross_subject_swlda_exploratory_v1` | `88dd0e3`（协议预先提交于 `762ea1e`） | 0 次；仅读 Train 缓存，原始 EDF 读取也为 0 |
+
+跨被试附加分析：10 名被试全部保留，先重算 30 个仅当前对照，再拟合 40 个跨被试模型。
+对照 AUC、字符准确率及逐 flash 分数与原 notebook 11（现 07）完全一致，最大差为 0。
+无调参、无被试排除，不改变主比较表、主图或主设计。k=3/6/12 的 X−C 宏平均
+AUC 差依次为 −0.042472、−0.080191、−0.091591；按被试 bootstrap 10,000 次的
+95% 区间依次为 [−0.073878, −0.005008]、[−0.121428, −0.035858]、
+[−0.130375, −0.043919]。这是未作多重比较校正的探索性描述；直接混合其他被试的
+S1/S2 数据在本设置下没有改善平均校准效果。所有逐被试差异保留在独立输出目录。
